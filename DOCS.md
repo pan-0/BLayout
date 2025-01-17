@@ -5,7 +5,7 @@
    3. [Macros](#Macros)
    4. [Functions](#Functions)
 2. [Usage](#Usage)
-   1. [`blcalc()` with `blnext()`](#bcalc-with-blnext)
+   1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
    2. [`blprev()`](#blprev)
    3. [`blnext()` vs. `blprev()`](#blnext-vs-blprev)
 3. [LICENSE](#LICENSE)
