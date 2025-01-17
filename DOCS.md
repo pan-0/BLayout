@@ -70,11 +70,11 @@ BL_API blsize blsizeof(const struct blayout *l);
   - `lays` is an array of length `n` containing layouts,
   - `prev_size` is used to chain multiple `blcalc()` calls. When first invoking, `0` must be passed, otherwise the result of the previous `blcalc()` call must be passed, assuming the call succeeded and a **non**-`0` value was returned. `align` and `offs` must not change across any chained calls.
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
-  - `ptr` is a pointer to the currently allocated object. When first invoking, pass a pointer to your buffer.
+  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your buffer.
   - `curr_size` is the size of the current object (see `blsizeof()`). When first invoking, pass `0`.
   - `next_align` is the alignment[^1] of the next object's type (in bytes). When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
-  - `ptr` is a pointer to the currently allocated object. When fist invoking, pass a pointer to the **end** of your buffer.
+  - `ptr` is a pointer to the current allocated object. When fist invoking, pass a pointer to the **end** of your buffer.
   - `prev_size` is the size of the previous object (see `blsizeof()`). When first invoking, pass the size of the **last** object.
   - `prev_align` is the alignment[^1] of the previous object's type (in bytes). When first invoking pass the alignment of the **last** object's type.
 * `blsizeof()` returns the total size (in bytes) of an object described by its layout. Effectively, it multiplies `blayout.nmemb` with `blayout.size`. It's provided as a convenience.
@@ -133,8 +133,8 @@ int *i = blnext(buf,          /* First allocation: pass the buffer. */
 assert(i != NULL);  /* Guaranteed to _not_ be `NULL`. */
 
 /* Continue with the next object... */
-float *f = blnext(i,                /* Pass the currently allocated object. */
-                  blsizeof(&l[0]),  /* Pass the size of the currently allocated object. */
+float *f = blnext(i,                /* Pass the current allocated object. */
+                  blsizeof(&l[0]),  /* Pass the size of the current allocated object. */
                   l[1].align);      /* Pass the alignment of the next object's type (`float`). */
 assert(f != NULL);  /* Likewise. */
 
@@ -208,7 +208,7 @@ float *f = blprev(end,              /* First allocation: pass the end of the buf
 assert(f != NULL);  /* Always true, same as before. */
 
 /* Continue with the previous layout... */
-int *i = blprev(f,                /* Pass the currently allocated object. */
+int *i = blprev(f,                /* Pass the current allocated object. */
                 blsizeof(&l[0]),  /* Pass the size of the previous object. */
                 l[0].align);      /* Pass the alignment of the previous object's type. */
 assert(i != NULL);  /* Likewise. */
