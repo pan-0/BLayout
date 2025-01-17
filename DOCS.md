@@ -26,10 +26,10 @@ struct blayout {
 	blsize align;
 };
 ```
-* `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZE_MAX` accordinly (see [below](#Constants)).
+* `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZE_MAX` accordingly (see [below](#Constants)).
 * `blayout` describes a single memory allocation request for an object:
-  - `nmemb` is the number of elements (similar to `calloc()`'s first argument),
-  - `size` is the size (in bytes) of each element/type,
+  - `nmemb` is the number of elements (like `calloc()`'s first argument),
+  - `size` is the size (in bytes) of each element/type (like `calloc()`'s second argument),
   - `align` is the alignment[^1] of the object's type
 
 ## Constants
