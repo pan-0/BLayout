@@ -114,10 +114,9 @@ BL_API blsize blcalc(blsize align,
 	size_t pos = base;
 	blsize i;
 
-	BL_ASSERT(/* size >= 0 && prev_size >= 0 && */ n > 0 &&
-	          lays != (void *)0 && align > 0 &&
-	          ((size_t)align & ((size_t)align - 1)) == 0 && offs >= 0 &&
-	          (size_t)align + (size_t)offs >= (size_t)align);
+	BL_ASSERT(align > 0 && ((size_t)align & ((size_t)align - 1)) == 0 &&
+	          offs >= 0 && n > 0 && lays != (void *)0 &&
+	          /* prev_size >= 0 && */ base >= (size_t)align);
 
 	if (pos + (size_t)prev_size < pos)
 		return 0;
