@@ -63,8 +63,8 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 
 BL_API blsize blsizeof(const struct blayout *l);
 ```
-* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The functions assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
-  - `align` is the default alignment[^1] (in bytes) your allocator supports. In case you already have an allocated buffer, pass the buffer's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any buffer allocated using it.
+* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
+  - `align` is the default alignment[^1] (in bytes) your allocator supports. In case you already have an allocated buffer, pass the buffer's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any buffer allocated by it.
   - `offs` is used in case you already have a buffer and want to allocate starting from an offset into that buffer. Pass `0` otherwise.
   - `n` is the number of layouts. Should be `> 0`.
   - `lays` is an array of length `n` containing layouts,
