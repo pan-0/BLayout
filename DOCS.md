@@ -63,20 +63,20 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 
 BL_API blsize blsizeof(const struct blayout *l);
 ```
-* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. `0` is returned on error.
+* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The functions assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
   - `align` is the default alignment[^1] (in bytes) your allocator supports. In case you already have an allocated buffer, pass the buffer's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any buffer allocated using it.
   - `offs` is used in case you already have a buffer and want to allocate starting from an offset into that buffer. Pass `0` otherwise.
   - `n` is the number of layouts. Should be `> 0`.
   - `lays` is an array of length `n` containing layouts,
   - `prev_size` is used to chain multiple `blcalc()` calls. When first invoking, `0` must be passed, otherwise the result of the previous `blcalc()` call must be passed, assuming the call succeeded and a **non**-`0` value was returned. `align` and `offs` must not change across any chained calls.
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
-  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your buffer.
-  - `curr_size` is the size of the current object (see `blsizeof()`). When first invoking, pass `0`.
-  - `next_align` is the alignment[^1] of the next object's type (in bytes). When first invoking, pass the alignment of the **first** object's type.
+  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your buffer. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
+  - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass `0`.
+  - `next_align` is the alignment[^1] of the next object's type (in bytes) and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
-  - `ptr` is a pointer to the current allocated object. When fist invoking, pass a pointer to the **end** of your buffer.
-  - `prev_size` is the size of the previous object (see `blsizeof()`). When first invoking, pass the size of the **last** object.
-  - `prev_align` is the alignment[^1] of the previous object's type (in bytes). When first invoking pass the alignment of the **last** object's type.
+  - `ptr` is a pointer to the current allocated object. When fist invoking, pass a pointer to the **end** of your buffer. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
+  - `prev_size` is the size of the previous object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass the size of the **last** object.
+  - `prev_align` is the alignment[^1] of the previous object's type (in bytes) and is assumed to be valid. When first invoking pass the alignment of the **last** object's type.
 * `blsizeof()` returns the total size (in bytes) of an object described by its layout. Effectively, it multiplies `blayout.nmemb` with `blayout.size`. It's provided as a convenience.
   - `l` is the pointer to the aforementioned layout.
   1. _Caveat: Padding due to alignment is **not** taken into account._
