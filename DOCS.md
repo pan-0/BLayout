@@ -207,7 +207,7 @@ float *f = blprev(end,              /* First allocation: pass the end of the buf
                   l[1].align);      /* First allocation: pass the alignment of the last object's type. */
 assert(f != NULL);  /* Always true, same as before. */
 
-/* Continue with the previous layout... */
+/* Continue with the previous object... */
 int *i = blprev(f,                /* Pass the current allocated object. */
                 blsizeof(&l[0]),  /* Pass the size of the previous object. */
                 l[0].align);      /* Pass the alignment of the previous object's type. */
