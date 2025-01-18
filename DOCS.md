@@ -26,7 +26,7 @@ struct blayout {
 	blsize align;
 };
 ```
-* `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZE_MAX` accordingly (see [below](#Constants)).
+* `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZEMAX` accordingly (see [below](#Constants)).
 * `blayout` describes a single memory allocation request for an object:
   - `nmemb` is the number of elements (like `calloc()`'s first argument),
   - `size` is the size (in bytes) of each element/type (like `calloc()`'s second argument),
@@ -34,10 +34,10 @@ struct blayout {
 
 ## Constants
 ```c
-#define BL_SIZE_MAX  SIZE_MAX
+#define BL_SIZEMAX   SIZE_MAX
 #define BL_ALIGNMENT alignof(max_align_t)
 ```
-* `BL_SIZE_MAX` is the equivalent to `size_t`'s `SIZE_MAX` and is equal to that by default. You may override this.
+* `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` and is equal to that by default. You may override this.
 * `BL_ALIGNMENT` is never used internally. It's equal to the maximum alignment[^1] among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#Functions)). This, too, can be overridden.
 
 _Note: To override these, either modify BLayout's header or `#define` them **before** including `blayout.h`._
@@ -46,9 +46,11 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
 ```c
 #define BL_API    static
 #define BL_ASSERT assert
+#define BL_INLINE inline
 ```
-* You may change `BL_API` to `extern` if you want to put the functions in a seperate translation unit. Keep in mind that every function is `inline` (for good reasons). So, you'd have to copy-paste the signatures due to C99's [semantics](https://lists.llvm.org/pipermail/llvm-dev/2021-August/152031.html).
+* You may change `BL_API` to `extern` if you want to put the functions in a seperate translation unit. Keep in mind that you'd have to copy-paste the signatures.
 * BLayout uses assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You should override this when not doing a debug build.
+* Every function is `inline` (C99 [semantics](https://lists.llvm.org/pipermail/llvm-dev/2021-August/152031.html)) through the `BL_INLINE` macro. This is so that you can workaround C's deficiencies, if you so wish.
 
 ## Functions
 ```c
