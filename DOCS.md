@@ -100,7 +100,7 @@ BL_API blsize blsizeof(const struct blayout *l);
  *
  * The order of the `lays` array is important! `blcalc()` takes the order into
  * account when computing its result. And it does that for the simple reason
- * that the whole point of this header is to allow the programmer to layout
+ * that the whole point of this header is to allow the programmer to lay out
  * their objects in memory exactly how they want. Hence, we preserve the order,
  * because it might be important, we wouldn't know. If the order is _not_
  * important to _you_, this detail doesn't impair you.
@@ -313,7 +313,7 @@ Thus, the two methods give different results. This example also makes clear why 
   struct header *h = blprev(p, sizeof(*h), alignof(struct header));  /* I'm sure this is perfectly fine, what could possible go wr */
   int id = h->id;  /* Kaboom! */
   ```
-  your computer would explode. You can't do this! _Even if it works_, you can't depend on this if you allocate using `blnext()`. Use `blprev()` instead. Remember that the two functions _layout objects differently_.
+  your computer would explode. You can't do this! _Even if it works_, you can't depend on this if you allocate using `blnext()`. Use `blprev()` instead. Remember that the two functions _lay out objects differently_.
 
 [^2]: Which also means you can't use one function to retrieve objects in reverse order, if you allocated using the other.
 
