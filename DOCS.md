@@ -1,20 +1,20 @@
 # BLayout Documentation
-1. [API](#API)
-   1. [Types](#Types)
-   2. [Constants](#Constants)
-   3. [Macros](#Macros)
-   4. [Functions](#Functions)
-2. [Usage](#Usage)
+1. [API](#api)
+   1. [Types](#types)
+   2. [Constants](#constants)
+   3. [Macros](#macros)
+   4. [Functions](#functions)
+2. [Usage](#usage)
    1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
    2. [`blprev()`](#blprev)
    3. [`blnext()` vs. `blprev()`](#blnext-vs-blprev)
-3. [LICENSE](#LICENSE)
+3. [LICENSE](#license)
 
 # API
-1. [Types](#Types)
-2. [Constants](#Constants)
-3. [Macros](#Macros)
-4. [Functions](#Functions)
+1. [Types](#types)
+2. [Constants](#constants)
+3. [Macros](#macros)
+4. [Functions](#functions)
 
 ## Types
 ```c
@@ -84,10 +84,10 @@ BL_API blsize blsizeof(const struct blayout *l);
   1. _Caveat: Padding due to alignment is **not** taken into account._
   2. _Caveat: Potential integer overflow is **not** checked. The layout is assumed to be correct. `blcalc()` already checks for this._
 
-[^1]: [alignment](https://en.wikipedia.org/wiki/Data_structure_alignment) is in bytes, **must** be **greater** than `0` **and** a power of `2`.
+[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is in bytes, **must** be **greater** than `0` **and** a power of `2`.
 
 # Usage
-1. [`blcalc()` with `blnext()`](#bcalc-with-blnext)
+1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
 2. [`blprev()`](#blprev)
 3. [`blnext()` vs. `blprev()`](#blnext-vs-blprev)
 
@@ -267,6 +267,7 @@ Where `Xi` is the `i`th byte of object `X`, respectively `Y`.
 Thus, the two methods give different results. This example also makes clear why you need to retain a pointer to your buffer in the case of `blprev()`: `X0` doesn't sit at the (original) address `16`!
 
 **Always use `blnext()`**, unless you desire the special properties of `blprev()` and the limitations don't affect you. Here's two scenarios where that could be true:
+
 * You always carry around a pointer to your buffer, so using `blprev()` has no extra burden. _Note that `blprev()` is 2-3 machine instructions shorter than `blnext()`, under `x86_64-sysv` and also depending on compiler and optimization options ([Related](https://fitzgen.com/2019/11/01/always-bump-downwards.html))._
 * You depend on the layout `blprev()` gives. This happens when giving a "header" to a "payload", just like `malloc()` does.
   ```c
@@ -310,7 +311,7 @@ Thus, the two methods give different results. This example also makes clear why 
   The example above **cannot** work with `blnext()`, it **only works with `blprev()`**. Even if you only used `blnext()` to allocate the objects, once you got to retrieve the header in:
 
   ```c
-  struct header *h = blprev(p, sizeof(*h), alignof(struct header));  /* I'm sure this is perfectly fine, what could possible go wr */
+  struct header *h = blprev(p, sizeof(*h), alignof(struct header));  /* I'm sure this is perfectly fine, what could possibly go wr */
   int id = h->id;  /* Kaboom! */
   ```
   your computer would explode. You can't do this! _Even if it works_, you can't depend on this if you allocate using `blnext()`. Use `blprev()` instead. Remember that the two functions _lay out objects differently_.
