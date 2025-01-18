@@ -179,7 +179,7 @@ return 0;
  * [1]: https://port70.net/~nsz/c/c11/n1570.html#note68
  */
 static_assert(alignof(int) <= BL_ALIGNMENT, "error: incorrect alignment");  /* Just to be sure. */
-free(i);  /* Same as `free(buf);` _in our case_. See above comment why and when this holds true. */
+free(i);  /* Same as `free(buf);` _in our case_. See the above comment why and when this holds true. */
 return 0;
 
 /*
@@ -309,7 +309,7 @@ Thus, the two methods give different results. This example also makes clear why 
       /* Do something with `id`... */
   }
   ```
-  The example above **cannot** work with `blnext()`, it **only works with `blprev()`**. Even if you only used `blnext()` to allocate the objects, once you got to retrieve the header in:
+  The above example **cannot** work with `blnext()`, it **only works with `blprev()`**. Even if you only used `blnext()` to allocate the objects, once you got to retrieve the header in:
 
   ```c
   struct header *h = blprev(p, sizeof(*h), alignof(struct header));  /* I'm sure this is perfectly fine, what could possibly go wr */
