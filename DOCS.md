@@ -176,7 +176,7 @@ return 0;
  *   correctly aligned for a pointer to type C, then a pointer to type A is
  *   correctly aligned for a pointer to type C.
  *
- * [1]: https://port70.net/~nsz/c/c11/n1570.html#note68
+ * [1]: <https://port70.net/~nsz/c/c11/n1570.html#note68>
  */
 static_assert(alignof(int) <= BL_ALIGNMENT, "error: incorrect alignment");  /* Just to be sure. */
 free(i);  /* Same as `free(buf);` _in our case_. See the above comment why and when this holds true. */
@@ -278,7 +278,7 @@ Thus, the two methods give different results. This example also makes clear why 
 
   struct payload {
       size_t size;
-      unsigned char data[];  /* Flexible array member: https://en.wikipedia.org/wiki/Flexible_array_member */
+      unsigned char data[];  /* Flexible array member: <https://gustedt.wordpress.com/2011/03/14/flexible-array-member/> */
   };
 
   struct payload *new_payload(my_ctx *ctx, size_t payload_size)
