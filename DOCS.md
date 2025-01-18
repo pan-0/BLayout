@@ -193,6 +193,7 @@ int *i = buf;  /* Okay, as long as `alignof(int) <= BL_ALIGNMENT`. */
 
 ## `blprev()`
 Usage of `blprev()` is similar to the usage of [`blnext()`](#blcalc-with-blnext) with these notable differences:
+
 1. You must allocate in **reverse** order.
 2. In order to cleanup safely, you **must** retain a pointer to your buffer.
 
