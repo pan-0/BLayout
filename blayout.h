@@ -93,6 +93,7 @@ struct bl_max_align99 {
 #define BL_INLINE inline
 #endif
 
+
 /*
  * Types.
  */
