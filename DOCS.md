@@ -26,7 +26,7 @@ struct blayout {
 	blsize align;
 };
 ```
-* `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZEMAX` accordingly (see [below](#Constants)).
+* `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZEMAX` accordingly (see [below](#constants)).
 * `blayout` describes a single memory allocation request for an object:
   - `nmemb` is the number of elements (like `calloc()`'s first argument),
   - `size` is the size (in bytes) of each element/type (like `calloc()`'s second argument),
@@ -38,7 +38,7 @@ struct blayout {
 #define BL_ALIGNMENT alignof(max_align_t)
 ```
 * `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` and is equal to that by default. You may override this, but the header assumes that it's **greater** than `0`.
-* `BL_ALIGNMENT` is never used internally. It's equal to the maximum alignment[^1] among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#Functions)). This, too, can be overridden.
+* `BL_ALIGNMENT` is never used internally. It's equal to the maximum alignment[^1] among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#functions)). This, too, can be overridden.
 
 _Note: To override these, either modify BLayout's header or `#define` them **before** including `blayout.h`._
 
@@ -66,7 +66,7 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 BL_API blsize blsizeof(const struct blayout *l);
 ```
 * `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
-  - `align` is the default alignment[^1] (in bytes) your allocator supports. In case you already have an allocated buffer, pass the buffer's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any buffer allocated by it.
+  - `align` is the default alignment[^1] your allocator supports. In case you already have an allocated buffer, pass the buffer's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any buffer allocated by it.
   - `offs` is used in case you already have a buffer and want to allocate starting from an offset into that buffer. Pass `0` otherwise.
   - `n` is the number of layouts. Should be **greater** than `0`.
   - `lays` is an array of length `n` containing layouts,
@@ -74,17 +74,17 @@ BL_API blsize blsizeof(const struct blayout *l);
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
   - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your buffer. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass `0`.
-  - `next_align` is the alignment[^1] of the next object's type (in bytes) and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
+  - `next_align` is the alignment[^1] of the next object's type and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
   - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to the **end** of your buffer. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `prev_size` is the size of the previous object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass the size of the **last** object.
-  - `prev_align` is the alignment[^1] of the previous object's type (in bytes) and is assumed to be valid. When first invoking pass the alignment of the **last** object's type.
+  - `prev_align` is the alignment[^1] of the previous object's type and is assumed to be valid. When first invoking pass the alignment of the **last** object's type.
 * `blsizeof()` returns the total size (in bytes) of an object described by its layout. Effectively, it multiplies `blayout.nmemb` with `blayout.size`. It's provided as a convenience.
   - `l` is the pointer to the aforementioned layout.
   1. _Caveat: Padding due to alignment is **not** taken into account._
   2. _Caveat: Potential integer overflow is **not** checked. The layout is assumed to be correct. `blcalc()` already checks for this._
 
-[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is in bytes, **must** be **greater** than `0` **and** a power of `2`.
+[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) it's a _positive_ power of `2`.
 
 # Usage
 1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
