@@ -84,7 +84,7 @@ BL_API blsize blsizeof(const struct blayout *l);
   1. _Caveat: Padding due to alignment is **not** taken into account._
   2. _Caveat: Potential integer overflow is **not** checked. The layout is assumed to be correct. `blcalc()` already checks for this._
 
-[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) it's a _positive_ power of `2`.
+[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a _positive_ power of `2`.
 
 # Usage
 1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
