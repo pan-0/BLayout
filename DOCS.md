@@ -129,15 +129,15 @@ if (buf == NULL) {
 }
 
 /* The first object. */
-int *i = blnext(buf,          /* First allocation: pass the buffer. */
-                0,            /* First allocation: pass `0`. */
-                l[0].align);  /* Pass the alignment of the first object's type (`int`). */
+int *i = blnext(buf,             /* First allocation: pass the buffer. */
+                0,               /* First allocation: pass `0`. */
+                lays[0].align);  /* Pass the alignment of the first object's type (`int`). */
 assert(i != NULL);  /* Guaranteed to _not_ be `NULL`. */
 
 /* Continue with the next object... */
-float *f = blnext(i,                /* Pass the current allocated object. */
-                  blsizeof(&l[0]),  /* Pass the size of the current allocated object. */
-                  l[1].align);      /* Pass the alignment of the next object's type (`float`). */
+float *f = blnext(i,                   /* Pass the current allocated object. */
+                  blsizeof(&lays[0]),  /* Pass the size of the current allocated object. */
+                  lays[1].align);      /* Pass the alignment of the next object's type (`float`). */
 assert(f != NULL);  /* Likewise. */
 
 /* Use `i` and `f` normally. */
@@ -178,7 +178,7 @@ return 0;
  *
  * [1]: <https://port70.net/~nsz/c/c11/n1570.html#note68>
  */
-static_assert(alignof(int) <= BL_ALIGNMENT, "error: incorrect alignment");  /* Just to be sure. */
+static_assert(alignof(int) <= BL_ALIGNMENT, "incorrect alignment");  /* Just to be sure. */
 free(i);  /* Same as `free(buf);` _in our case_. See the above comment why and when this holds true. */
 return 0;
 
@@ -213,15 +213,15 @@ void *buf;
  * in the first allocation.
  */
 void *end = (char *)buf + size;
-float *f = blprev(end,              /* First allocation: pass the end of the buffer. */
-                  blsizeof(&l[1]),  /* First allocation: pass the size of the last object. */
-                  l[1].align);      /* First allocation: pass the alignment of the last object's type. */
+float *f = blprev(end,                 /* First allocation: pass the end of the buffer. */
+                  blsizeof(&lays[1]),  /* First allocation: pass the size of the last object. */
+                  lays[1].align);      /* First allocation: pass the alignment of the last object's type. */
 assert(f != NULL);  /* Always true, same as before. */
 
 /* Continue with the previous object... */
-int *i = blprev(f,                /* Pass the current allocated object. */
-                blsizeof(&l[0]),  /* Pass the size of the previous object. */
-                l[0].align);      /* Pass the alignment of the previous object's type. */
+int *i = blprev(f,                   /* Pass the current allocated object. */
+                blsizeof(&lays[0]),  /* Pass the size of the previous object. */
+                lays[0].align);      /* Pass the alignment of the previous object's type. */
 assert(i != NULL);  /* Likewise. */
 
 *i = 1337;
@@ -292,11 +292,11 @@ Thus, the two methods give different results. This example also makes clear why 
           abort();
 
       void *buf_end = /* ... */;
-      struct payload *p = blprev(buf_end, blsizeof(&l[1]), l[1].align);
+      struct payload *p = blprev(buf_end, blsizeof(&lays[1]), lays[1].align);
       p->size = payload_size;
       memset(p->data, 0, payload_size);
 
-      struct header *h = blprev(p, blsizeof(&l[0]), l[0].align);
+      struct header *h = blprev(p, blsizeof(&lays[0]), lays[0].align);
       h->id = /* ... */;
 
       return p;
