@@ -46,8 +46,7 @@
 /* else :shrug-face: */
 #endif
 /* !MSVC && >=C11 */
-#elif !defined _MSC_VER && defined __STDC_VERSION__ && \
-__STDC_VERSION__ >= 201112L  /* C11 */
+#elif !defined _MSC_VER && defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L
 #if __STDC_VERSION__ >= 202311L  /* C23 */
 #define BL_ALIGNMENT alignof(max_align_t)
 #else
