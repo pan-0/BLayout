@@ -47,10 +47,15 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
 #define BL_API    static
 #define BL_ASSERT assert
 #define BL_INLINE inline
+#define BL_DEBUG  0
 ```
 * You may change `BL_API` to `extern` if you want to put the functions in a seperate translation unit. Keep in mind that you'd have to copy-paste the signatures.
-* BLayout uses assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You should override this when not doing a debug build.
+* BLayout can use assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You can override this macro if you use a custom `assert()` function. See `BL_DEBUG` below if you want to disable assertions.
 * Every function is `inline` (C99 [semantics](https://lists.llvm.org/pipermail/llvm-dev/2021-August/152031.html)) through the `BL_INLINE` macro. This is so that you can workaround C's deficiencies, if you so wish.
+* `BL_DEBUG` takes three possible values:
+  - `0`, where BLayout will use **no** assertions (see above) and, in addition, will take advantage of compiler-specific optimization hints (e.g. `attribute(nonnull(...))`). This is the default.
+  - `1`, where BLayout will use **some** assertions **and** optimization hints.
+  - `2`, where BLayout will use **all** assertions **and no** optimization hints.
 
 ## Functions
 ```c
