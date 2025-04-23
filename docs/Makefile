@@ -3,16 +3,16 @@
 
 .POSIX:
 .SUFFIXES:
-CC := pandoc
-CFLAGS := \
+CC ::= pandoc
+CFLAGS ::= \
 	--listings \
 	-H listings-setup.tex \
 	--pdf-engine=lualatex \
 	-V geometry:margin=1cm \
 	-V geometry:foot=0cm \
-	-V 'mainfont:FreeSans' \
-	-V 'sansfont:FreeSans' \
-	-V 'monofont:FreeMono' \
+	-V mainfont:FreeSans \
+	-V sansfont:FreeSans \
+	-V monofont:FreeMono \
 	-V colorlinks=true \
 	-V linkcolor=blue \
 	-V urlcolor=red \
@@ -27,3 +27,4 @@ DOCS.pdf: docs-pandoc.md
 
 clean:
 	@rm -f DOCS.pdf
+.PHONY: clean
