@@ -89,7 +89,7 @@ Currently, the header targets C99 and later standards, due to the hard dependenc
 The code is accepted from major C++ compilers, but no tests for functionality, edge cases and undefined behavior have been performed.
 
 # Documentation
-See [here](DOCS.md).
+See [here](docs/DOCS.md).
 
 # LICENSE
 ```
