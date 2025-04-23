@@ -21,6 +21,8 @@ printf("%f %d\n", *d, *i);
 ```
 
 # Dependencies
+Only freestanding headers are required.
+
 * `<assert.h>` _(optional)_
 * `<stddef.h>`
   - `size_t`
