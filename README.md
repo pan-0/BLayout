@@ -1,79 +1,24 @@
+# BLayout
+
 A ~200 line C header to help with laying out and retrieving heterogeneous objects in contiguous memory.
 
 # Example
 ```c
-#include "blayout.h"
-#include <assert.h>    /* static_assert */
-#include <stdalign.h>  /* alignof */
-#include <stddef.h>    /* size_t, NULL */
-#include <stdlib.h>    /* malloc(), free() */
-#include <stdio.h>     /* printf() */
+const struct blayout lays[] = {{1, sizeof(double), alignof(double)},
+                               {1, sizeof(int),    alignof(int)  }};
+size_t size = blcalc(alignof(max_align_t), 0, 2, lays, 0);
+assert(size != 0 && "`blcalc()` error");
 
-#define lenof(A) (sizeof (A) / sizeof (A)[0])
+void *buffer = malloc(size);
+assert(buffer != NULL && "`malloc()` error");
 
-struct Base {
-	int x;
-};
+double *d = blnext(buffer,                  0, lays[0].align);
+int    *i = blnext(     d, blsizeof(&lays[0]), lays[1].align);
 
-struct Derived {
-	struct Base b;
-	int y;
-};
-
-struct Wrapper {
-	int z;
-	//struct Base b;
-};
-
-/* To be sure that `struct Wrapper` is allocated at the base. */
-static_assert(alignof(struct Wrapper) <= BL_ALIGNMENT, "");
-
-int main(void)
-{
-	const struct blayout l[] = {
-		{1, sizeof(struct Wrapper), alignof(struct Wrapper)},
-		{1, sizeof(struct Derived), alignof(struct Derived)}
-	};
-	size_t size = blcalc(BL_ALIGNMENT, 0, lenof(l), l, 0);
-	struct Wrapper *w = size == 0 ? NULL : malloc(size);
-	if (w == NULL)
-		return 1;
-
-	/* ok */
-	w->z = 1;
-
-	/* ok */
-	struct Base *b = blnext(w, blsizeof(&l[0]), l[1].align);
-	b->x = 2;
-
-	/* ok! */
-	struct Derived *d = (struct Derived *)b;
-	d->y = 3;
-
-	printf("w->z=%d b->x=%d d->y=%d\n", w->z, b->x, d->y);
-
-	d->b.x = 4;
-	printf("w->z=%d b->x=%d d->y=%d\n", w->z, b->x, d->y);
-
-	free(w);
-	return 0;
-}
+*d = 3.14;
+*i = 42;
+printf("%f %d\n", *d, *i);
 ```
-Staying faithful to the irony of a modern production compiler, [Clang](https://clang.llvm.org) fails to produce identical code with the [UB](https://en.wikipedia.org/wiki/Undefined_behavior#Examples_in_C_and_C++)-variant of the above example and requires the following patch:
-```diff
-@@ -42 +42,9 @@
--	struct Base *b = blnext(w, blsizeof(&l[0]), l[1].align);
-+	struct Base *b;
-+#	ifdef __clang__
-+		/* Clang fails to optimize `blnext()`, so we have to do a little bit more work. */
-+		static_assert(alignof(struct Wrapper) == alignof(struct Derived) &&
-+		             (sizeof(struct Wrapper) & (alignof(struct Wrapper) - 1)) == 0, "");
-+		b = (struct Base *)((char *)w + sizeof(*w));
-+#	else
-+		b = blnext(w, blsizeof(&l[0]), l[1].align);
-+#	endif
-```
-See also [here](https://reddit.com/r/C_Programming/comments/1age6gt).
 
 # Dependencies
 * `<assert.h>` _(optional)_
