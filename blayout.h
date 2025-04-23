@@ -34,7 +34,6 @@
 
 /*#define BL_SIZEMAX   SIZE_MAX*/
 /*#define BL_ALIGNMENT alignof(max_align_t)*/
-/*#define BL_API       static*/
 /*#define BL_ASSERT    assert*/
 /*#define BL_INLINE    inline*/
 /*#define BL_DEBUG     0*/
@@ -113,9 +112,7 @@ struct bl_max_align99 {
 #endif
 #endif
 
-#ifndef BL_API
 #define BL_API static
-#endif
 
 #ifndef BL_INLINE
 #define BL_INLINE inline
@@ -227,7 +224,12 @@ BL_API void *blnext(void *_ptr, blsize _curr_size, blsize _next_align)
 
 #ifdef __GNUC__
 BL_ATTR(__returns_nonnull__) BL_ATTR(__nonnull__(1))
-__attribute__((__alloc_size__(2), __alloc_align__(3)))
+__attribute__((__alloc_align__(3)))
+/*
+ * This attribute is extremely buggy, atleast under GCC versions 11.0 -
+ * 14.2. See <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96503>.
+ */
+/*__attribute__((__alloc_size__(2)))*/
 #endif
 BL_INLINE
 BL_API void *blprev(void *_ptr, blsize _prev_size, blsize _prev_align)
