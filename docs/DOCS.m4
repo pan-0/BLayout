@@ -1,3 +1,10 @@
+dnl Copyright 2025, pan (pan_@disroot.org)
+dnl SPDX-License-Identifier: MIT-0
+dnl
+dnl Markdown already makes use of backtick.
+changequote(@,')dnl
+define(@Alignment', ifdef(@pandoc', alignment, alignment[^1]))dnl
+dnl
 # BLayout Documentation
 1. [API](#api)
    1. [Types](#types)
@@ -38,7 +45,7 @@ struct blayout {
 #define BL_ALIGNMENT alignof(max_align_t)
 ```
 * `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` and is equal to that by default. You may override this, but the header assumes that it's **greater** than `0`.
-* `BL_ALIGNMENT` is never used internally. It's equal to the maximum alignment among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#functions)). This, too, can be overridden.
+* `BL_ALIGNMENT` is never used internally. It's equal to the maximum Alignment among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#functions)). This, too, can be overridden.
 
 _Note: To override these, either modify BLayout's header or `#define` them **before** including `blayout.h`._
 
@@ -71,7 +78,7 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 BL_API blsize blsizeof(const struct blayout *l);
 ```
 * `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
-  - `align` is the default alignment[^1] your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any memory block allocated by it.
+  - `align` is the default Alignment your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any memory block allocated by it.
   - `offs` is used in case you already have a block and want to allocate starting from an offset into that block. Pass `0` otherwise.
   - `n` is the number of layouts. Should be **greater** than `0`.
   - `lays` is an array of length `n` containing layouts,
@@ -79,11 +86,11 @@ BL_API blsize blsizeof(const struct blayout *l);
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
   - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your block (or `block + offs` if `blcalc()` was passed a non-zero offset). It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass `0`.
-  - `next_align` is the alignment of the next object's type and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
+  - `next_align` is the Alignment of the next object's type and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
   - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to the **end** of your block. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `prev_size` is the size of the previous object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass the size of the **last** object.
-  - `prev_align` is the alignment of the previous object's type and is assumed to be valid. When first invoking pass the alignment of the **last** object's type.
+  - `prev_align` is the Alignment of the previous object's type and is assumed to be valid. When first invoking pass the alignment of the **last** object's type.
 * `blsizeof()` returns the total size (in bytes) of an object described by its layout. Effectively, it multiplies `blayout.nmemb` with `blayout.size`. It's provided as a convenience.
   - `l` is the pointer to the aforementioned layout.
   1. _Caveat: Padding due to alignment is **not** taken into account._
@@ -173,11 +180,15 @@ return 0;
  *  5. Since `block` has alignment `BL_ALIGNMENT` and that alignment _must_ be
  *     suitable for `int`, we can conclude that `BL_ALIGNMENT >= alignof(int)`
  *     or, equivalently, `alignof(int) <= BL_ALIGNMENT`.
- */
+dnl If generating PDF, split the comment into two, so that the other half
+dnl appears nicely in the next page.
+ifdef(@pandoc',
+@ */
 ```
 
 ```c
-/*
+/*',
+@ *')
  * Note that any type can be over-aligned. This is fine, because a greater
  * alignment guarantees natural alignment. Or, in the words of the standard[1]:
  *
@@ -189,7 +200,7 @@ return 0;
  * [1]: <https://port70.net/~nsz/c/c11/n1570.html#note68>
  */
 static_assert(alignof(int) <= BL_ALIGNMENT, "incorrect alignment");  /* Just to be sure. */
-free(i);  /* Same as `free(block);` _in our case_. See the above comments why and when this holds true. */
+free(i);  /* Same as `free(block);` _in our case_. See the above ifdef(@pandoc', comments, comment) why and when this holds true. */
 return 0;
 
 /*
@@ -333,6 +344,8 @@ Thus, the two methods give different results. This example also makes clear why 
 ```
 MIT No Attribution
 
+dnl Change quote so that we can use `@` again.
+changequote([,])dnl
 Copyright 2025 pan <pan_@disroot.org>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
