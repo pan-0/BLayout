@@ -71,17 +71,17 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 BL_API blsize blsizeof(const struct blayout *l);
 ```
 * `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
-  - `align` is the default alignment[^1] your allocator supports. In case you already have an allocated buffer, pass the buffer's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any buffer allocated by it.
-  - `offs` is used in case you already have a buffer and want to allocate starting from an offset into that buffer. Pass `0` otherwise.
+  - `align` is the default alignment[^1] your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any memory block allocated by it.
+  - `offs` is used in case you already have a block and want to allocate starting from an offset into that block. Pass `0` otherwise.
   - `n` is the number of layouts. Should be **greater** than `0`.
   - `lays` is an array of length `n` containing layouts,
   - `prev_size` is used to chain multiple `blcalc()` calls. When first invoking, `0` must be passed, otherwise the result of the previous `blcalc()` call must be passed, assuming the call succeeded and a **non**-`0` value was returned. `align` and `offs` must not change across any chained calls.
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
-  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your buffer. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
+  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your block (or `block + offs` if `blcalc()` was passed a non-zero offset). It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass `0`.
   - `next_align` is the alignment[^1] of the next object's type and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
-  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to the **end** of your buffer. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
+  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to the **end** of your block. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `prev_size` is the size of the previous object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass the size of the **last** object.
   - `prev_align` is the alignment[^1] of the previous object's type and is assumed to be valid. When first invoking pass the alignment of the **last** object's type.
 * `blsizeof()` returns the total size (in bytes) of an object described by its layout. Effectively, it multiplies `blayout.nmemb` with `blayout.size`. It's provided as a convenience.
@@ -127,14 +127,14 @@ if (size == 0) {
 	return 1;
 }
 
-void *buf = malloc(size);
-if (buf == NULL) {
+void *block = malloc(size);
+if (block == NULL) {
 	fprintf(stderr, "malloc() error\n");
 	return 1;
 }
 
 /* The first object. */
-int *i = blnext(buf,             /* First allocation: pass the buffer. */
+int *i = blnext(block,           /* First allocation: pass the block. */
                 0,               /* First allocation: pass `0`. */
                 lays[0].align);  /* Pass the alignment of the first object's type (`int`). */
 assert(i != NULL);  /* Guaranteed to _not_ be `NULL`. */
@@ -152,24 +152,25 @@ f[1] = 3.14;
 printf("*i=%d f[0]=%f f[1]=%f\n", *i, f[0], f[1]);
 
 /* Cleanup. */
-free(buf);  /* `i` and `f` are guaranteed to be cleaned up with a _single_ `free()`. */
+free(block);  /* `i` and `f` are guaranteed to be cleaned up with a _single_ `free()`. */
 return 0;
 
 /*
  * Alternatively, if the alignment of the _first_ object's type is
- * _less-or-equal_ to your buffer's alignment, then the pointer to the first
- * allocated object is equivalent to a pointer to the buffer.
+ * _less-or-equal_ to your block's alignment, then the pointer to the first
+ * allocated object is equivalent to a pointer to the block.
  *
  * In our case:
  *
  *  1. The first object's type has alignment `alignof(int)`.
  *  2. `BL_ALIGNMENT` is the default alignment of `malloc()` (which we also
  *     used when calling `blcalc()`).
- *  3. Thus, the buffer returned to us by `malloc()` (`buf`) has that alignment.
+ *  3. Thus, the block returned to us by `malloc()` (`block`) has that
+ *     alignment.
  *  4. `malloc()` must, as mandated by the C standard, be able to return a
  *     suitably aligned pointer for _every_ naturally aligned type. That
  *     includes our case: `int`.
- *  5. Since `buf` has alignment `BL_ALIGNMENT` and that alignment _must_ be
+ *  5. Since `block` has alignment `BL_ALIGNMENT` and that alignment _must_ be
  *     suitable for `int`, we can conclude that `BL_ALIGNMENT >= alignof(int)`
  *     or, equivalently, `alignof(int) <= BL_ALIGNMENT`.
  *
@@ -184,14 +185,14 @@ return 0;
  * [1]: <https://port70.net/~nsz/c/c11/n1570.html#note68>
  */
 static_assert(alignof(int) <= BL_ALIGNMENT, "incorrect alignment");  /* Just to be sure. */
-free(i);  /* Same as `free(buf);` _in our case_. See the above comment why and when this holds true. */
+free(i);  /* Same as `free(block);` _in our case_. See the above comment why and when this holds true. */
 return 0;
 
 /*
  * The above observation also implies that we could skip the first call to
  * `blnext()` and allocate the first object (`i`) like so:
  */
-int *i = buf;  /* Okay, as long as `alignof(int) <= BL_ALIGNMENT`. */
+int *i = block;  /* Okay, as long as `alignof(int) <= BL_ALIGNMENT`. */
 
 /* With the rest of the code being identical... */
 ```
@@ -200,25 +201,25 @@ int *i = buf;  /* Okay, as long as `alignof(int) <= BL_ALIGNMENT`. */
 Usage of `blprev()` is similar to the usage of [`blnext()`](#blcalc-with-blnext) with these notable differences:
 
 1. You must allocate in **reverse** order.
-2. In order to cleanup safely, you **must** retain a pointer to your buffer.
+2. In order to cleanup safely, you **must** retain a pointer to your block.
 
 Let's see with a similar example:
 ```c
 /*
  * ... Same layouts and boilerplate as the `blnext()` example...
  *
- * Assume `buf` of size `size` has already been allocated as above.
+ * Assume `block` of size `size` has already been allocated as above.
  */
 size_t size;
-void *buf;
+void *block;
 
 /*
  * Allocate in **reverse** order, starting with the **last** object. `blprev()`
- * works in a _right-to-left_ manner; we have to pass the _end_ of our buffer
+ * works in a _right-to-left_ manner; we have to pass the _end_ of our block
  * in the first allocation.
  */
-void *end = (char *)buf + size;
-float *f = blprev(end,                 /* First allocation: pass the end of the buffer. */
+void *end = (char *)block + size;
+float *f = blprev(end,                 /* First allocation: pass the end of the block. */
                   blsizeof(&lays[1]),  /* First allocation: pass the size of the last object. */
                   lays[1].align);      /* First allocation: pass the alignment of the last object's type. */
 assert(f != NULL);  /* Always true, same as before. */
@@ -240,7 +241,7 @@ printf("*i=%d f[0]=%f f[1]=%f\n", *i, f[0], f[1]);
  * NOTE: You can _not_ pass `i` or `f` in the case of `blprev()`! You must pass
  *       the pointer returned to you by `malloc()`!
  */
-free(buf);
+free(block);
 return 0;
 
 //free(i);  /* XXX: Don't do this _ever_! */
@@ -255,14 +256,14 @@ Let's assume your layouts array is `{{1, 1, 1}, {1, 2, 2}}`. Meaning:
 1. One (`1`) type of size `1` (bytes) at an `1`-byte alignment boundary, and
 2. One (`1`) type of size `2` (bytes) at an `2`-byte alignment boundary.
 
-Assuming your buffer is `16`-byte aligned, `blcalc()` (correctly) returns `4` for the above array.
+Assuming your block is `16`-byte aligned, `blcalc()` (correctly) returns `4` for the above array.
 
-If your buffer sits at address `16` then, using `blnext()`, the bytes would be laid out like this:
+If your block sits at address `16` then, using `blnext()`, the bytes would be laid out like this:
 ```
 Address | 16 17 18 19
 Bytes   | X0    Y0 Y1
 ```
-But, if you were to use `blprev()`, allocating from the end of the buffer, they'd be laid out like this:
+But, if you were to use `blprev()`, allocating from the end of the block, they'd be laid out like this:
 ```
 Address | 16 17 18 19
 Bytes   |    X0 Y0 Y1
@@ -270,11 +271,11 @@ Bytes   |    X0 Y0 Y1
 
 Where `Xi` is the `i`th byte of object `X`, respectively `Y`.
 
-Thus, the two methods give different results. This example also makes clear why you need to retain a pointer to your buffer in the case of `blprev()`: `X0` doesn't sit at the (original) address `16`!
+Thus, the two methods give different results. This example also makes clear why you need to retain a pointer to your block in the case of `blprev()`: `X0` doesn't sit at the (original) address `16`!
 
 **Always use `blnext()`**, unless you desire the special properties of `blprev()` and the limitations don't affect you. Here's two scenarios where that could be true:
 
-* You always carry around a pointer to your buffer, so using `blprev()` has no extra burden. _Note that `blprev()` is 2-3 machine instructions shorter than `blnext()`, under `x86_64-sysv` and also depending on compiler and optimization options ([Related](https://fitzgen.com/2019/11/01/always-bump-downwards.html))._
+* You always carry around a pointer to your block, so using `blprev()` has no extra burden. _Note that `blprev()` is 2-3 machine instructions shorter than `blnext()`, under `x86_64-sysv` and also depending on compiler and optimization options ([Related](https://fitzgen.com/2019/11/01/always-bump-downwards.html))._
 * You depend on the layout `blprev()` gives. This happens when giving a "header" to a "payload", just like `malloc()` does.
   ```c
   struct header {
@@ -296,8 +297,8 @@ Thus, the two methods give different results. This example also makes clear why 
       if (size == 0)
           abort();
 
-      void *buf_end = /* ... */;
-      struct payload *p = blprev(buf_end, blsizeof(&lays[1]), lays[1].align);
+      void *block_end = /* ... */;
+      struct payload *p = blprev(block_end, blsizeof(&lays[1]), lays[1].align);
       p->size = payload_size;
       memset(p->data, 0, payload_size);
 

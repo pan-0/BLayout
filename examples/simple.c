@@ -20,12 +20,12 @@ int main(void)
 	if (size == 0)
 		return 1;
 
-	void *buffer = malloc(size);
-	if (buffer == NULL)
+	void *block = malloc(size);
+	if (block == NULL)
 		return 1;
 
-	int    *i = blnext(buffer,                  0, lays[0].align);
-	double *d = blnext(     i, blsizeof(&lays[0]), lays[1].align);
+	int    *i = blnext(block,                  0, lays[0].align);
+	double *d = blnext(    i, blsizeof(&lays[0]), lays[1].align);
 	assert(i != NULL);
 	assert(d != NULL);
 
@@ -37,6 +37,6 @@ int main(void)
 
 	printf("i[0]=%d i[1]=%d d[0]=%f d[1]=%f\n", i[0], i[1], d[0], d[1]);
 
-	free(buffer);
+	free(block);
 	return 0;
 }

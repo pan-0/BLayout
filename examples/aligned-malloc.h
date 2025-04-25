@@ -55,7 +55,7 @@ AM_API void aligned_free(void *ptr);
 #endif
 
 struct amhdr {
-	void *buf;
+	void *blk;
 };
 
 struct amhdr_padded {
@@ -88,14 +88,14 @@ AM_API void *aligned_malloc(size_t alignment, size_t size)
 		goto error;
 	}
 
-	void *buf = malloc(req);
-	if (unlikely(buf == NULL))
+	void *blk = malloc(req);
+	if (unlikely(blk == NULL))
 		goto error_malloc;
 
-	void *end = (char *)buf + req;
+	void *end = (char *)blk + req;
 	void *ptr = blprev(aligned(end), size, alignment);
 	struct amhdr *hdr = blprev(aligned(ptr), sizeof *hdr, AMHDR_ALIGNMENT);
-	hdr->buf = buf;
+	hdr->blk = blk;
 	return ptr;
 
 error:
@@ -108,7 +108,7 @@ AM_API void aligned_free(void *ptr)
 {
 	if (ptr != NULL) {
 		struct amhdr *hdr = blprev(aligned(ptr), sizeof *hdr, AMHDR_ALIGNMENT);
-		free(hdr->buf);
+		free(hdr->blk);
 	}
 }
 

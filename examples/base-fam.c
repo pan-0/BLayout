@@ -49,7 +49,7 @@ int main(void)
 		/* Clang fails to optimize `blnext()`, so we have to do a little bit more work. */
 		static_assert(alignof(struct Wrapper) == alignof(struct Derived) &&
 		              (sizeof(struct Wrapper) & (alignof(struct Wrapper) - 1)) == 0, "");
-		b = (void *)((char *)w + sizeof(*w));
+		b = (struct Base *b)(w + 1);
 #	else
 		b = blnext(w, blsizeof(&l[0]), l[1].align);
 #	endif

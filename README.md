@@ -5,15 +5,15 @@ A ~200 line C header to help with laying out and retrieving heterogeneous object
 # Example
 ```c
 const struct blayout lays[] = {{1, sizeof(double), alignof(double)},
-                               {1, sizeof(int),    alignof(int)  }};
+                               {1, sizeof(int),    alignof(int)   }};
 size_t size = blcalc(alignof(max_align_t), 0, 2, lays, 0);
 assert(size != 0 && "`blcalc()` error");
 
-void *buffer = malloc(size);
-assert(buffer != NULL && "`malloc()` error");
+void *block = malloc(size);
+assert(block != NULL && "`malloc()` error");
 
-double *d = blnext(buffer,                  0, lays[0].align);
-int    *i = blnext(     d, blsizeof(&lays[0]), lays[1].align);
+double *d = blnext(block,                  0, lays[0].align);
+int    *i = blnext(    d, blsizeof(&lays[0]), lays[1].align);
 
 *d = 3.14;
 *i = 42;
