@@ -202,6 +202,7 @@ ifdef(@`pandoc',
  *  5. Since `block` has alignment `BL_ALIGNMENT` and that alignment _must_ be
  *     suitable for `int`, we can conclude that `BL_ALIGNMENT >= alignof(int)`
  *     or, equivalently, `alignof(int) <= BL_ALIGNMENT`.
+ *
  * Note that any type can be over-aligned. This is fine, because a greater
  * alignment guarantees natural alignment. Or, in the words of the standard[1]:
  *
