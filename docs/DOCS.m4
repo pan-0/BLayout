@@ -1,10 +1,19 @@
 dnl Copyright 2025, pan (pan_@disroot.org)
 dnl SPDX-License-Identifier: MIT-0
 dnl
-dnl Markdown already makes use of backtick.
-changequote(@,')dnl
-define(@Alignment', ifdef(@pandoc', alignment, alignment[^1]))dnl
-dnl
+dnl Change beginning quote to @` since markdown already makes use of backtick.
+changequote([,])changequote([@`],['])dnl
+define(@`Alignment', ifdef(@`pandoc', alignment, alignment[^1]))dnl
+dnl See <https://stackoverflow.com/questions/16965490/pandoc-markdown-page-break>
+define(@`Pagebreak', ifdef(@`pandoc', @`\pagebreak
+'))dnl
+dnl See <https://tex.stackexchange.com/questions/54333/how-to-avoid-numbering-the-first-page-of-the-document>
+define(@`Pagenumbering', ifdef(@`pandoc', @`\pagenumbering{$1}
+'))dnl
+<!-- Copyright 2025, pan (pan_@disroot.org) -->
+<!-- SPDX-License-Identifier: MIT-0 -->
+dnl Skip page numbering on the first page.
+Pagenumbering(gobble)
 # BLayout Documentation
 1. [API](#api)
    1. [Types](#types)
@@ -15,8 +24,12 @@ dnl
    1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
    2. [`blprev()`](#blprev)
    3. [`blnext()` vs. `blprev()`](#blnext-vs-blprev)
+   4. [`blcalc()` chaining](#blcalc-chaining)
 3. [LICENSE](#license)
-
+ifdef(@`pandoc',@`\clearpage
+')dnl
+dnl Turn on page numbering now.
+Pagenumbering(arabic)
 # API
 1. [Types](#types)
 2. [Constants](#constants)
@@ -44,7 +57,7 @@ struct blayout {
 #define BL_SIZEMAX   SIZE_MAX
 #define BL_ALIGNMENT alignof(max_align_t)
 ```
-* `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` and is equal to that by default. You may override this, but the header assumes that it's **greater** than `0`.
+* `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` for `blsize` and is equal to that by default. You may override this, but the header assumes that it's **greater** than `0`.
 * `BL_ALIGNMENT` is never used internally. It's equal to the maximum Alignment among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#functions)). This, too, can be overridden.
 
 _Note: To override these, either modify BLayout's header or `#define` them **before** including `blayout.h`._
@@ -59,10 +72,10 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
 * `BL_API` is currently only used as a visual aid, do **not** try to change it.
 * BLayout can use assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You can override this macro if you use a custom `assert()` function. See `BL_DEBUG` below if you want to disable assertions.
 * Every function is `inline` (C99 [semantics](https://lists.llvm.org/pipermail/llvm-dev/2021-August/152031.html)) through the `BL_INLINE` macro. This is so that you can workaround C's deficiencies, if you so wish.
-* `BL_DEBUG` takes three possible values:
-  - `0`, where BLayout will use **no** assertions (see above) and, in addition, will take advantage of compiler-specific optimization hints (e.g. `attribute(nonnull(...))`). This is the default.
-  - `1`, where BLayout will use **some** assertions **and** optimization hints.
-  - `2`, where BLayout will use **all** assertions **and no** optimization hints.
+* `BL_DEBUG` can be defined to three possible values:
+  - `0`, where BLayout will use **no** assertions (see above) and, in addition, will try to use compiler-specific annotations (e.g. `attribute(nonnull(...))`) in a portable and non-intrusive manner. This is the default.
+  - `1`, where BLayout will use **some** assertions and annotations.
+  - `2`, where BLayout will use **all** assertions **and no** annotations.
 
 ## Functions
 ```c
@@ -77,14 +90,14 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 
 BL_API blsize blsizeof(const struct blayout *l);
 ```
-* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead, indicating error.
-  - `align` is the default Alignment your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should work with `malloc()` and with any memory block allocated by it.
-  - `offs` is used in case you already have a block and want to allocate starting from an offset into that block. Pass `0` otherwise.
+* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead.
+  - `align` is the default Alignment your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should work with any memory block allocated by `malloc()`.
+  - `offs` is used in case you want to allocate starting from a specific offset into a block. Pass `0` otherwise.
   - `n` is the number of layouts. Should be **greater** than `0`.
-  - `lays` is an array of length `n` containing layouts,
+  - `lays` is an array of length `n` containing layouts.
   - `prev_size` is used to chain multiple `blcalc()` calls. When first invoking, `0` must be passed, otherwise the result of the previous `blcalc()` call must be passed, assuming the call succeeded and a **non**-`0` value was returned. `align` and `offs` must not change across any chained calls.
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
-  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your block (or `block + offs` if `blcalc()` was passed a non-zero offset). It's assumed to **not** be `NULL` and thus the function doesn't check for this.
+  - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your block (or `block + offs` if `blcalc()` was passed a non-zero `offs`). It's assumed to **not** be `NULL` and thus the function doesn't check for this.
   - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass `0`.
   - `next_align` is the Alignment of the next object's type and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
@@ -95,13 +108,14 @@ BL_API blsize blsizeof(const struct blayout *l);
   - `l` is the pointer to the aforementioned layout.
   1. _Caveat: Padding due to alignment is **not** taken into account._
   2. _Caveat: Potential integer overflow is **not** checked. The layout is assumed to be correct. `blcalc()` already checks for this._
-
+Pagebreak
 [^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a power of `2`.
 
 # Usage
 1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
 2. [`blprev()`](#blprev)
 3. [`blnext()` vs. `blprev()`](#blnext-vs-blprev)
+4. [`blcalc()` chaining](#blcalc-chaining)
 
 ## `blcalc()` with `blnext()`
 ```c
@@ -131,13 +145,13 @@ size_t size = blcalc(BL_ALIGNMENT,  /* Going to use the default alignment. */
                      0);            /* We aren't chaining `blcalc()` calls. */
 if (size == 0) {
 	fprintf(stderr, "blcalc() error\n");
-	return 1;
+	return EXIT_FAILURE;
 }
 
 void *block = malloc(size);
 if (block == NULL) {
 	fprintf(stderr, "malloc() error\n");
-	return 1;
+	return EXIT_FAILURE;
 }
 
 /* The first object. */
@@ -160,13 +174,21 @@ printf("*i=%d f[0]=%f f[1]=%f\n", *i, f[0], f[1]);
 
 /* Cleanup. */
 free(block);  /* `i` and `f` are guaranteed to be cleaned up with a _single_ `free()`. */
-return 0;
+return EXIT_SUCCESS;
 
 /*
  * Alternatively, if the alignment of the _first_ object's type is
  * _less-or-equal_ to your block's alignment, then the pointer to the first
  * allocated object is equivalent to a pointer to the block.
- *
+dnl If generating PDF, split the comment into two, so that the other half
+dnl appears nicely in the next page.
+ifdef(@`pandoc',
+@` */
+```
+
+```c
+/*',
+@` *')
  * In our case:
  *
  *  1. The first object's type has alignment `alignof(int)`.
@@ -180,15 +202,6 @@ return 0;
  *  5. Since `block` has alignment `BL_ALIGNMENT` and that alignment _must_ be
  *     suitable for `int`, we can conclude that `BL_ALIGNMENT >= alignof(int)`
  *     or, equivalently, `alignof(int) <= BL_ALIGNMENT`.
-dnl If generating PDF, split the comment into two, so that the other half
-dnl appears nicely in the next page.
-ifdef(@pandoc',
-@ */
-```
-
-```c
-/*',
-@ *')
  * Note that any type can be over-aligned. This is fine, because a greater
  * alignment guarantees natural alignment. Or, in the words of the standard[1]:
  *
@@ -201,7 +214,7 @@ ifdef(@pandoc',
  */
 static_assert(alignof(int) <= BL_ALIGNMENT, "incorrect alignment");  /* Just to be sure. */
 free(i);  /* Same as `free(block);` _in our case_. See the above ifdef(@pandoc', comments, comment) why and when this holds true. */
-return 0;
+return EXIT_SUCCESS;
 
 /*
  * The above observation also implies that we could skip the first call to
@@ -211,7 +224,7 @@ int *i = block;  /* Okay, as long as `alignof(int) <= BL_ALIGNMENT`. */
 
 /* With the rest of the code being identical... */
 ```
-
+Pagebreak
 ## `blprev()`
 Usage of `blprev()` is similar to the usage of [`blnext()`](#blcalc-with-blnext) with these notable differences:
 
@@ -257,12 +270,12 @@ printf("*i=%d f[0]=%f f[1]=%f\n", *i, f[0], f[1]);
  *       the pointer returned to you by `malloc()`!
  */
 free(block);
-return 0;
+return EXIT_SUCCESS;
 
 //free(i);  /* XXX: Don't do this _ever_! */
 //free(f);  /* XXX: Or this either! */
 ```
-
+Pagebreak
 ## `blnext()` vs. `blprev()`
 When should you use the one or the other? Given the limitations of `blprev()`, shouldn't you always use `blnext()`? It depends. Firstly, you indeed **can only use one**[^2] of the two to allocate from a single memory region. Given that, which to pick?
 
@@ -337,15 +350,48 @@ Thus, the two methods give different results. This example also makes clear why 
   int id = h->id;  /* Kaboom! */
   ```
   your computer would explode. You can't do this! _Even if it works_, you can't depend on this if you allocate using `blnext()`. Use `blprev()` instead. Remember that the two functions _lay out objects differently_.
-
+Pagebreak
 [^2]: Which also means you can't use one function to retrieve objects in reverse order, if you allocated using the other.
 
-# LICENSE
+## `blcalc()` chaining
+```c
+/* Assuming these layouts and computed size again: */
+const struct blayout lays[] = {{1, sizeof(int),   alignof(int)  },
+                               {2, sizeof(float), alignof(float)}};
+size_t size = blcalc(BL_ALIGNMENT, 0, 2, lays, 0);
+assert(size != 0 && "`blcalc()` error");
+
+/* We can compute the same result by chaining two `blcalc()` calls: */
+size_t tmp = blcalc(BL_ALIGNMENT, 0, 1, lays, 0);
+assert(tmp != 0 && "`blcalc()` error");
+size_t chained_size = blcalc(BL_ALIGNMENT, 0, 1, lays + 1, tmp);
+assert(chained_size != 0 && "`blcalc()` error");
+
+/* If no wrap-around happened, this assertion is guaranteed to be true: */
+assert(size == chained_size);
+
+/*
+ * Chaining generalizes to any number of calls, where the next immediate call
+ * gets passed the result of the most recent call.
+ */
+size_t tmp_0 = blcalc(alignment, offset, ...,     0); if (tmp_0 == 0) error();
+size_t tmp_1 = blcalc(alignment, offset, ..., tmp_0); if (tmp_1 == 0) error();
+size_t tmp_2 = blcalc(alignment, offset, ..., tmp_1); if (tmp_2 == 0) error();
+...;
+size_t tmp_n = blcalc(alignment, offset, ..., tmp_{n-1});
+if (tmp_n == 0)
+	error();
+
+size_t size = tmp_n;
 ```
+Pagebreak@`'dnl
+dnl Don't want page number for the license page.
+Pagenumbering(gobble)
+# LICENSE
+dnl See <https://www.overleaf.com/learn/latex/Code_listing#The_verbatim_environment>
+ifdef(@`pandoc', @`\sffamily\small\begin{verbatim}', @````')
 MIT No Attribution
 
-dnl Change quote so that we can use `@` again.
-changequote([,])dnl
 Copyright 2025 pan <pan_@disroot.org>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -362,4 +408,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```
+ifdef(@`pandoc', @`\end{verbatim}', @````')
