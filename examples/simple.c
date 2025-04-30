@@ -1,10 +1,11 @@
 /* Copyright 2025, pan (pan_@disroot.org) */
 /* SPDX-License-Identifier: MIT-0 */
 
-#include "blayout.h"   /* struct blayout, blcalc(), blnext(), blsizeof() */
+/* BL_ALIGNMENT, struct blayout, blcalc(), blnext(), blsizeof() */
+#include "blayout.h"
 #include <assert.h>    /* assert() */
 #include <stdalign.h>  /* alignof */
-#include <stddef.h>    /* size_t, max_align_t, NULL */
+#include <stddef.h>    /* size_t, NULL */
 #include <stdio.h>     /* printf() */
 #include <stdlib.h>    /* malloc(), free() */
 
@@ -16,7 +17,7 @@ int main(void)
 	size_t d_len = 2;
 	const struct blayout lays[] = {{i_len, sizeof(int),    alignof(int)   },
 	                               {d_len, sizeof(double), alignof(double)}};
-	size_t size = blcalc(alignof(max_align_t), 0, lengthof(lays), lays, 0);
+	size_t size = blcalc(BL_ALIGNMENT, 0, lengthof(lays), lays, 0);
 	if (size == 0)
 		return 1;
 
