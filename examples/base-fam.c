@@ -8,7 +8,7 @@
 #include <stdalign.h>  /* alignof */
 #include <stddef.h>    /* size_t, NULL */
 #include <stdio.h>     /* printf() */
-#include <stdlib.h>    /* malloc(), free() */
+#include <stdlib.h>    /* malloc(), free(), EXIT_FAILURE, EXIT_SUCCESS */
 
 #define lengthof(A) (sizeof (A) / sizeof (A)[0])
 
@@ -23,7 +23,7 @@ struct Derived {
 
 struct Wrapper {
     int z;
-    //struct Base b;
+    /*struct Base b;*/
 };
 
 /* To be sure that `struct Wrapper` is allocated at the base. */
@@ -38,12 +38,12 @@ int main(void)
 	size_t size = blcalc(BL_ALIGNMENT, 0, lengthof(l), l, 0);
 	struct Wrapper *w = size == 0 ? NULL : malloc(size);
     if (w == NULL)
-        return 1;
+        return EXIT_FAILURE;
 
-    /* ok */
+    /* Okay. */
     w->z = 1;
 
-    /* ok */
+    /* Okay. */
 	struct Base *b;
 #	ifdef __clang__
 		/* Clang fails to optimize `blnext()`, so we have to do a little bit more work. */
@@ -55,7 +55,7 @@ int main(void)
 #	endif
     b->x = 2;
 
-    /* ok! */
+    /* Okay! */
     struct Derived *d = (struct Derived *)b;
     d->y = 3;
 
@@ -65,5 +65,5 @@ int main(void)
     printf("w->z=%d b->x=%d d->y=%d\n", w->z, b->x, d->y);
 
     free(w);
-    return 0;
+    return EXIT_SUCCESS;
 }

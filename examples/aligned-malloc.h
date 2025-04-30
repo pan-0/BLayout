@@ -3,9 +3,29 @@
 
 /*
  * Equivalent to C11's `aligned_alloc()` but for C99. To free, you _must_ use
- * `aligned_free()`.
+ * `aligned_free()`. May or may not compile and work under a C++ compiler.
  *
- * Implemented as a "header library" for the sake of this example.
+ * Implemented as a "header library" for the sake of this example. Example
+ * usage:
+ * ```c
+ * #define AM_API static        // Fine if used in a single translation unit.
+ * #define AM_IMPL              // Include the implementation here.
+ * #include "aligned-malloc.h"  // aligned_malloc(), aligned_free()
+ * #include <stddef.h>          // size_t, NULL
+ *
+ * int f(size_t alignment, size_t size)
+ * {
+ *     T *p = aligned_malloc(alignment, size);
+ *     if (p == NULL)
+ *         return 1;
+ *
+ *     // ...
+ *
+ *     //free(p);  // XXX: This is wrong and, at best, will crash.
+ *     aligned_free(p);
+ *     return 0;
+ * }
+ * ```
  */
 
 #ifndef AM_H
@@ -47,11 +67,11 @@ AM_API void aligned_free(void *ptr);
 #include <stdlib.h>   /* malloc(), free() */
 
 #ifdef __GNUC__
-#	define unlikely(x)  __builtin_expect(!!(x), 0)
-#	define aligned(ptr) __builtin_assume_aligned((ptr), sizeof(void *))
+#	define AM_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#	define aligned(ptr)   __builtin_assume_aligned((ptr), sizeof(void *))
 #else
-#	define unlikely(x)  (x)
-#	define aligned(ptr) (ptr)
+#	define AM_UNLIKELY(x) (x)
+#	define aligned(ptr)   (ptr)
 #endif
 
 struct amhdr {
@@ -68,7 +88,7 @@ struct amhdr_padded {
 AM_API void *aligned_malloc(size_t alignment, size_t size)
 {
 	int err;
-	if (unlikely(alignment == 0 || (alignment & (alignment - 1)) != 0
+	if (AM_UNLIKELY(alignment == 0 || (alignment & (alignment - 1)) != 0
 			|| alignment % sizeof(void *) != 0
 			|| (size & (alignment - 1)) != 0)) {
 		err = EINVAL;
@@ -83,13 +103,13 @@ AM_API void *aligned_malloc(size_t alignment, size_t size)
 		{1, size, alignment}
 	};
 	size_t req = blcalc(BL_ALIGNMENT, 0, 2, l, 0);
-	if (unlikely(req == 0)) {
+	if (AM_UNLIKELY(req == 0)) {
 		err = ENOMEM;
 		goto error;
 	}
 
 	void *blk = malloc(req);
-	if (unlikely(blk == NULL))
+	if (AM_UNLIKELY(blk == NULL))
 		goto error_malloc;
 
 	void *end = (char *)blk + req;
@@ -114,7 +134,7 @@ AM_API void aligned_free(void *ptr)
 
 #undef AMHDR_ALIGNMENT
 #undef aligned
-#undef unlikely
+#undef AM_UNLIKELY
 
 #undef AM_IMPL
 #endif  /* AM_IMPL */

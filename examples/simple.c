@@ -7,7 +7,7 @@
 #include <stdalign.h>  /* alignof */
 #include <stddef.h>    /* size_t, NULL */
 #include <stdio.h>     /* printf() */
-#include <stdlib.h>    /* malloc(), free() */
+#include <stdlib.h>    /* malloc(), free(), EXIT_FAILURE, EXIT_SUCCESS */
 
 #define lengthof(A) (sizeof (A) / sizeof (A)[0])
 
@@ -19,11 +19,11 @@ int main(void)
 	                               {d_len, sizeof(double), alignof(double)}};
 	size_t size = blcalc(BL_ALIGNMENT, 0, lengthof(lays), lays, 0);
 	if (size == 0)
-		return 1;
+		return EXIT_FAILURE;
 
 	void *block = malloc(size);
 	if (block == NULL)
-		return 1;
+		return EXIT_FAILURE;
 
 	int    *i = blnext(block,                  0, lays[0].align);
 	double *d = blnext(    i, blsizeof(&lays[0]), lays[1].align);
@@ -39,5 +39,5 @@ int main(void)
 	printf("i[0]=%d i[1]=%d d[0]=%f d[1]=%f\n", i[0], i[1], d[0], d[1]);
 
 	free(block);
-	return 0;
+	return EXIT_SUCCESS;
 }
