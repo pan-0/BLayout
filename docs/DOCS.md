@@ -1,3 +1,8 @@
+---
+title: BLayout Documentation
+date: May 1, 2025
+author: pan <pan_@disroot.org>
+---
 <!-- Copyright 2025, pan (pan_@disroot.org) -->
 <!-- SPDX-License-Identifier: MIT-0 -->
 
@@ -41,7 +46,7 @@ struct blayout {
 #define BL_SIZEMAX   SIZE_MAX
 #define BL_ALIGNMENT alignof(max_align_t)
 ```
-* `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` for `blsize` and is equal to that by default. You may override this, but the header assumes that it's **greater** than `0`.
+* `BL_SIZEMAX` is the equivalent to `size_t`'s `SIZE_MAX` for `blsize` and is equal to that by default. You may override this, but the header assumes that it's **greater** than $0$.
 * `BL_ALIGNMENT` is never used internally. It's equal to the maximum alignment[^1] among C's scalar types. It's provided as a convenience when calling `blcalc()` (see [below](#functions)). This, too, can be overridden.
 
 _Note: To override these, either modify BLayout's header or `#define` them **before** including `blayout.h`._
@@ -57,9 +62,9 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
 * BLayout can use assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You can override this macro if you use a custom `assert()` function. See `BL_DEBUG` below if you want to disable assertions.
 * Every function is `inline` (C99 [semantics](https://lists.llvm.org/pipermail/llvm-dev/2021-August/152031.html)) through the `BL_INLINE` macro. This is so that you can workaround C's deficiencies, if you so wish.
 * `BL_DEBUG` can be defined to three possible values:
-  - `0`, where BLayout will use **no** assertions (see above) and, in addition, will try to use compiler-specific annotations (e.g. `attribute(nonnull(...))`) in a portable and non-intrusive manner. This is the default.
-  - `1`, where BLayout will use **some** assertions and annotations.
-  - `2`, where BLayout will use **all** assertions **and no** annotations.
+  - $0$, where BLayout will use **no** assertions (see above) and, in addition, will try to use compiler-specific annotations (e.g. `attribute(nonnull(...))`) in a portable and non-intrusive manner. This is the default.
+  - $1$, where BLayout will use **some** assertions and annotations.
+  - $2$, where BLayout will use **all** assertions **and no** annotations.
 
 ## Functions
 ```c
@@ -74,15 +79,15 @@ BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 
 BL_API blsize blsizeof(const struct blayout *l);
 ```
-* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, `0` is returned instead.
+* `blcalc()` returns the minimum size needed to contiguously allocate multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, $0$ is returned instead.
   - `align` is the default alignment[^1] your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should work with any memory block allocated by `malloc()`.
-  - `offs` is used in case you want to allocate starting from a specific offset into a block. Pass `0` otherwise.
-  - `n` is the number of layouts. Should be **greater** than `0`.
+  - `offs` is used in case you want to allocate starting from a specific offset into a block. Pass $0$ otherwise.
+  - `n` is the number of layouts. Should be **greater** than $0$.
   - `lays` is an array of length `n` containing layouts.
-  - `prev_size` is used to chain multiple `blcalc()` calls. When first invoking, `0` must be passed, otherwise the result of the previous `blcalc()` call must be passed, assuming the call succeeded and a **non**-`0` value was returned. `align` and `offs` must not change across any chained calls.
+  - `prev_size` is used to chain multiple `blcalc()` calls. When first invoking, $0$ must be passed, otherwise the result of the previous `blcalc()` call must be passed, assuming the call succeeded and a **non**-$0$ value was returned. `align` and `offs` must not change across any chained calls.
 * `blnext()` allocates the next object in a **left-to-right** manner, where:
   - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to your block (or `block + offs` if `blcalc()` was passed a non-zero `offs`). It's assumed to **not** be `NULL` and thus the function doesn't check for this.
-  - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass `0`.
+  - `curr_size` is the size of the current object (see `blsizeof()`) and is assumed to be valid. When first invoking, pass $0$.
   - `next_align` is the alignment[^1] of the next object's type and is assumed to be valid. When first invoking, pass the alignment of the **first** object's type.
 * `blprev()` is like `blnext()`, but allocates and returns the previous object, in a **right-to-left** manner. That means you should allocate in **reverse** order, starting with **last** object.
   - `ptr` is a pointer to the current allocated object. When first invoking, pass a pointer to the **end** of your block. It's assumed to **not** be `NULL` and thus the function doesn't check for this.
@@ -93,7 +98,7 @@ BL_API blsize blsizeof(const struct blayout *l);
   1. _Caveat: Padding due to alignment is **not** taken into account._
   2. _Caveat: Potential integer overflow is **not** checked. The layout is assumed to be correct. `blcalc()` already checks for this._
 
-[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a power of `2`.
+[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a power of $2$.
 
 # Usage
 1. [`blcalc()` with `blnext()`](#blcalc-with-blnext)
@@ -258,29 +263,30 @@ When should you use the one or the other? Given the limitations of `blprev()`, s
 
 Let's assume your layouts array is `{{1, 1, 1}, {1, 2, 2}}`. Meaning:
 
-1. One (`1`) type of size `1` (bytes) at an `1`-byte alignment boundary, and
-2. One (`1`) type of size `2` (bytes) at an `2`-byte alignment boundary.
+1. One ($1$) type of size $1$ (bytes) at an $1$-byte alignment boundary, and
+2. One ($1$) type of size $2$ (bytes) at an $2$-byte alignment boundary.
 
-Assuming your block is `16`-byte aligned, `blcalc()` (correctly) returns `4` for the above array.
+Assuming your block is $16$-byte aligned, `blcalc()` (correctly) returns $4$ for the above array.
 
-If your block sits at address `16` then, using `blnext()`, the bytes would be laid out like this:
-```
-Address | 16 17 18 19
-Bytes   | X0    Y0 Y1
-```
+If your block sits at address $16$ then, using `blnext()`, the bytes would be laid out like this:
+
+| $Address$ | $16$  | $17$  | $18$  | $19$  |
+| --------- | ----- | ----- | ----- | ----- |
+| $Byte$    | $X_0$ |       | $Y_0$ | $Y_1$ |
+
 But, if you were to use `blprev()`, allocating from the end of the block, they'd be laid out like this:
-```
-Address | 16 17 18 19
-Bytes   |    X0 Y0 Y1
-```
 
-Where `Xi` is the `i`th byte of object `X`, respectively `Y`.
+| $Address$ | $16$  | $17$  | $18$  | $19$  |
+| --------- | ----- | ----- | ----- | ----- |
+| $Byte$    |       | $X_0$ | $Y_0$ | $Y_1$ |
 
-Thus, the two methods give different results. This example also makes clear why you need to retain a pointer to your block in the case of `blprev()`: `X0` doesn't sit at the (original) address `16`!
+Where $X_i$ is the $i$ th byte of object $X$, respectively $Y$.
+
+Thus, the two methods give different results. This example also makes clear why you need to retain a pointer to your block in the case of `blprev()`: $X_0$ doesn't sit at the (original) address $16$!
 
 **Always use `blnext()`**, unless you desire the special properties of `blprev()` and the limitations don't affect you. Here's two scenarios where that could be true:
 
-* You always carry around a pointer to your block, so using `blprev()` has no extra burden. _Note that `blprev()` is 2-3 machine instructions shorter than `blnext()`, under `x86_64-sysv` and also depending on compiler and optimization options ([Related](https://fitzgen.com/2019/11/01/always-bump-downwards.html))._
+* You always carry around a pointer to your block, so using `blprev()` has no extra burden. _Note that `blprev()` is generally 1-2 machine instructions shorter than `blnext()`, depending on target triple, compiler and optimization options. ([Related](https://fitzgen.com/2019/11/01/always-bump-downwards.html))._
 * You depend on the layout `blprev()` gives. This happens when giving a "header" to a "payload", just like `malloc()` does.
   ```c
   struct header {
