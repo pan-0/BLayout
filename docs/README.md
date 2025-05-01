@@ -9,7 +9,7 @@ For `DOCS.md`:
 $ make
 ```
 
-For generating a [PDF](https://en.wikipedia.org/wiki/PDF) file (`DOCS.pdf`), you'll also need [`pandoc`](https://pandoc.org/) and [`exiftool`](https://exiftool.org/). Keep in mind that `pandoc` itself will make use of [LuaTeX](https://www.luatex.org/), so you must have that installed too.
+For generating a [PDF](https://en.wikipedia.org/wiki/PDF) file (`DOCS.pdf`), you'll also need [`pandoc`](https://pandoc.org/), [`exiftool`](https://exiftool.org/) and [GNU FreeFont]([https://www.gnu.org/software/freefont/). Keep in mind that `pandoc` itself will make use of [LuaTeX](https://www.luatex.org/), so you must have that installed too.
 ```console
 $ make pdf
 ```
