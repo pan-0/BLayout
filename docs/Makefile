@@ -32,17 +32,22 @@ EXIFTOOL_FLAGS ::= \
 	-XMP-prism:CopyrightYear="2025" \
 	-overwrite_original
 
+# Ain't that confusing?
 all: DOCS.md
 .PHONY: all
 
 pdf: DOCS.pdf
 .PHONY: pdf
 
+# Yup.
+both: DOCS.md DOCS.pdf
+.PHONY: both
+
 DOCS.md: DOCS.m4
 	m4 $< > $@
 
 DOCS.pdf: docs-pandoc.md listings-setup.tex copyright.txt
-	$(info This can take awhile...)
+	$(info This may take awhile...)
 	pandoc $< -H listings-setup.tex $(PANDOC_FLAGS) -o $@ && \
 	exiftool -@ copyright.txt $(EXIFTOOL_FLAGS) $@
 
