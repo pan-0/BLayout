@@ -37,11 +37,19 @@
 /*#define BL_ASSERT    assert*/
 /*#define BL_INLINE    inline*/
 /*#define BL_DEBUG     0*/
+/*#define BL_CONST     0*/
 
 
 /*
  * Boilerplate.
  */
+
+#if defined BL_CONST && !(BL_CONST >= 0 && BL_CONST <= 3)
+#error "invalid `BL_CONST` value, must be `0`, `1`, `2`, or `3`"
+#elif defined __cplusplus && __cplusplus >= 202302L /* C++23 */ \
+		&& (!defined BL_CONST || BL_CONST <= 1)
+#warn "recommend `BL_CONST` with a value of `2`"
+#endif
 
 #if !defined BL_DEBUG || BL_DEBUG == 0
 #define BL_ATTR(attr) __attribute__((attr))
@@ -143,7 +151,7 @@ struct blayout {
  */
 
 #if defined __GNUC__
-__attribute__((__pure__))
+__attribute__((__pure__))  /* <- always use _some_ attributes. */
 #if !BL_INLINE_USER
 BL_ATTR(__always_inline__)
 #endif
@@ -205,7 +213,7 @@ BL_ATTR(__returns_nonnull__) BL_ATTR(__nonnull__(1))
 __attribute__((__alloc_align__(3)))
 #endif
 BL_INLINE
-BL_API void *blnext(void *_ptr, blsize _curr_size, blsize _next_align)
+BL_API void *bl_next_impl(void *_ptr, blsize _curr_size, blsize _next_align)
 {
 	size_t _pad;
 #ifdef BL_DEBUG
@@ -232,7 +240,7 @@ __attribute__((__alloc_align__(3)))
 /*__attribute__((__alloc_size__(2)))*/
 #endif
 BL_INLINE
-BL_API void *blprev(void *_ptr, blsize _prev_size, blsize _prev_align)
+BL_API void *bl_prev_impl(void *_ptr, blsize _prev_size, blsize _prev_align)
 {
 	size_t _pad;
 #ifdef BL_DEBUG
@@ -248,6 +256,96 @@ BL_API void *blprev(void *_ptr, blsize _prev_size, blsize _prev_align)
 	_pad = (size_t)((uintptr_t)_ptr & ((size_t)_prev_align - 1));
 	return (char *)_ptr - _pad;
 }
+
+#if defined BL_CONST && BL_CONST >= 1
+
+#ifdef __GNUC__
+BL_ATTR(__returns_nonnull__) BL_ATTR(__nonnull__(1))
+__attribute__((__alloc_align__(3)))
+#endif
+BL_INLINE
+BL_API const void *blnextc(const void *_ptr,
+                           blsize _curr_size,
+                           blsize _next_align)
+{
+	size_t _pad;
+#ifdef BL_DEBUG
+#if BL_DEBUG >= 2
+	BL_ASSERT(_ptr != (void *)0);
+#endif
+#if BL_DEBUG >= 1
+	BL_ASSERT(/* _curr_size >= 0 && */ _next_align > 0 &&
+	          ((size_t)_next_align & ((size_t)_next_align - 1)) == 0);
+#endif
+#endif
+	_ptr = (const char *)_ptr + _curr_size;
+	_pad = (size_t)(~((uintptr_t)_ptr - 1) & ((size_t)_next_align - 1));
+	return (const char *)_ptr + _pad;
+}
+
+#ifdef __GNUC__
+BL_ATTR(__returns_nonnull__) BL_ATTR(__nonnull__(1))
+__attribute__((__alloc_align__(3)))
+/*__attribute__((__alloc_size__(2)))*/
+#endif
+BL_INLINE
+BL_API const void *blprevc(const void *_ptr,
+                           blsize _prev_size,
+                           blsize _prev_align)
+{
+	size_t _pad;
+#ifdef BL_DEBUG
+#if BL_DEBUG >= 2
+	BL_ASSERT(_ptr != (void *)0);
+#endif
+#if BL_DEBUG >= 1
+	BL_ASSERT(_prev_size > 0 && _prev_align > 0 &&
+	          ((size_t)_prev_align & ((size_t)_prev_align - 1)) == 0);
+#endif
+#endif
+	_ptr = (const char *)_ptr - _prev_size;
+	_pad = (size_t)((uintptr_t)_ptr & ((size_t)_prev_align - 1));
+	return (const char *)_ptr - _pad;
+}
+
+#endif  /* `const`-qualified variants. */
+
+#if !defined BL_CONST || BL_CONST <= 1
+#define blnext(ptr, curr_size, next_align) \
+	bl_next_impl(ptr, curr_size, next_align)
+#define blprev(ptr, prev_size, prev_align) \
+	bl_prev_impl(ptr, prev_size, prev_align)
+#elif defined BL_CONST && BL_CONST >= 2
+#if BL_CONST == 3
+/*
+ * Do this rigmarole to workaround `-Wcast-qual`. GCC/Clang silently accept
+ * this. And it's fine anyway, since the underlying implementations already
+ * depend on `uintptr_t`.
+ */
+#define BL_UNCONST(ptr) ((void *)(uintptr_t)(const void *)(ptr))
+#else
+#define BL_UNCONST(ptr) ((void *)(ptr))
+#endif
+/*
+ * (Ab)use the conditional operator. See the examples included in the C
+ * standard to understand how this works.
+ */
+#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
+#define blnext(ptr, curr_size, next_align)                      \
+    _Generic(1 ? (ptr) : BL_UNCONST(ptr),                       \
+             void *:       bl_next_impl,                        \
+             const void *: blnextc)(ptr, curr_size, next_align)
+#define blprev(ptr, prev_size, prev_align)                      \
+    _Generic(1 ? (ptr) : BL_UNCONST(ptr),                       \
+             void *:       bl_prev_impl,                        \
+             const void *: blprevc)(ptr, prev_size, prev_align)
+#else
+#define blnext(ptr, curr_size, next_align) \
+	(1 ? bl_next_impl(BL_UNCONST(ptr), curr_size, next_align) : (ptr))
+#define blprev(ptr, prev_size, prev_align) \
+	(1 ? bl_prev_impl(BL_UNCONST(ptr), prev_size, prev_align) : (ptr))
+#endif
+#endif
 
 #ifdef __GNUC__
 BL_ATTR(__nonnull__(1)) __attribute__((__pure__))

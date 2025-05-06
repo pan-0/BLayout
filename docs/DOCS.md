@@ -58,6 +58,7 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
 #define BL_ASSERT assert
 #define BL_INLINE inline
 #define BL_DEBUG  0
+#define BL_CONST  0
 ```
 * `BL_API` is currently only used as a visual aid, do **not** try to change it.
 * BLayout can use assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You can override this macro if you use a custom `assert()` function. See `BL_DEBUG` below if you want to disable assertions.
@@ -66,11 +67,15 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
   - $0$, where BLayout will use **no** assertions (see above) and, in addition, will try to use compiler-specific annotations (e.g. `attribute(nonnull(...))`) in a portable and non-intrusive manner. This is the default.
   - $1$, where BLayout will use **some** assertions and annotations.
   - $2$, where BLayout will use **all** assertions **and no** annotations.
+* `BL_CONST` can be used to include `const`-aware functions (see [below](#functions)). It's not defined by default, but can be to four possible values:
+  - $0$, where no `const`-aware functions will be included. The behavior is the same as if `BL_CONST` wasn't defined. This is the default.
+  - $1$, where BLayout will include `const`-aware functions (`blnextc()`, `blprevc()`; see [below](#functions)).
+  - $2$, where BLayout will change `blnext()` and `blprev()` to automatically and correctly handle the `const`-qualified case of input pointers, as well as the non-qualified case.
+  - $3$, where the behavior is identical to $2$, but also compatible with the `-Wcast-qual` warning offered by [GCC](https://gcc.gnu.org/onlinedocs/gcc-15.1.0/gcc/Warning-Options.html#index-Wcast-qual) and [Clang](https://clang.llvm.org/docs/DiagnosticsReference.html#wcast-qual).
 
 ## Functions
 _Note: Reading the [terminology](#terminology) section first might clear up some terms that are used in the descriptions below._
 ```c
-
 BL_API blsize blcalc(blsize align,
                      ptrdiff_t offs,
                      blsize n,
@@ -81,6 +86,11 @@ BL_API void *blnext(void *ptr, blsize curr_size, blsize next_align);
 BL_API void *blprev(void *ptr, blsize prev_size, blsize prev_align);
 
 BL_API blsize blsizeof(const struct blayout *l);
+
+#if BL_CONST >= 1
+BL_API const void *blnextc(const void *ptr, blsize curr_size, blsize next_align);
+BL_API const void *blprevc(const void *ptr, blsize prev_size, blsize prev_align);
+#endif
 ```
 * `blcalc()` returns the minimum size needed to contiguously lay out multiple objects. The function assumes that all arguments are valid and within bounds. If wrap-around is detected when computing the size, $0$ is returned instead.
   - `align` is the default alignment[^1] your allocator supports. In case you already have an allocated block, pass the block's alignment. `BL_ALIGNMENT` should be compatible with the default alignment of every memory block allocated by `malloc()` and every naturally-aligned[^2] type.
@@ -100,6 +110,9 @@ BL_API blsize blsizeof(const struct blayout *l);
   - `l` is the pointer to the aforementioned layout.
   1. _Caveat: Padding due to alignment is **not** taken into account._
   2. _Caveat: Potential integer overflow is **not** checked. The layout is assumed to be correct. `blcalc()` already checks for this._
+* `blnextc()` and `blprevc()` have identical behavior to `blnext()` and `blprev()` respectively. They are _not_ included if `BL_CONST` is undefined or has a value of $0$. They return and take a `const`-qualified pointer. Remember also that `blnext()` and `blprev()` can automatically preserve `const`-correctness if `BL_CONST` is defined to a value of $2$ or $3$.
+
+Keep in mind that the signatures above are for reference. The actual implementation may significantly differ. For example, some functions may be implemented as a macro, meaning that you can't take their address. However, it's guaranteed that all arguments will be evaluated, and each will be evaluated once. Further, you can be assured that your lexical scope won't be polluted.
 
 [^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a power of $2$.
 [^2]: Meaning, every type that is not _over-aligned_: that does **not** have [extended alignment](https://port70.net/~nsz/c/c11/n1570.html#6.2.8p3).
