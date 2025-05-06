@@ -15,7 +15,7 @@ title: BLayout Documentation
 date: May 1, 2025
 ifdef(@`pandoc',author: |
   | pan
-  | [pan_@disroot.org](mailto:pan_@disroot.org)
+  | <pan_@disroot.org>
 
 title-meta: BLayout Documentation
 author-meta: pan [<pan_@disroot.org>](mailto:pan_@disroot.org)
