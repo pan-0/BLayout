@@ -316,7 +316,9 @@ BL_API const void *blprevc(const void *_ptr,
 #define blprev(ptr, prev_size, prev_align) \
 	bl_prev_impl(ptr, prev_size, prev_align)
 #elif defined BL_CONST && BL_CONST >= 2
-#if BL_CONST == 3
+#if defined __cplusplus
+#define BL_UNCONST(ptr) const_cast<void *>(static_cast<const void *>(ptr))
+#elif BL_CONST == 3
 /*
  * Do this rigmarole to workaround `-Wcast-qual`. GCC/Clang silently accept
  * this. And it's fine anyway, since the underlying implementations already
