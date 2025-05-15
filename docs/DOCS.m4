@@ -267,7 +267,7 @@ ifdef(@`pandoc',
  *  2. `BL_ALIGNMENT` is, as stated, compatible with the alignment of every
  *     naturally-aligned type, which includes the alignment of the first
  *     object's type: `alignof(int)`.
- *  2. `BL_ALIGNMENT` is also compatible with the alignment of every memory
+ *  3. `BL_ALIGNMENT` is also compatible with the alignment of every memory
  *     block allocated by `malloc()`.
  *  4. Thus, we can conclude that `alignof(int) <= BL_ALIGNMENT`.
  *
