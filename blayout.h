@@ -134,28 +134,45 @@
  * <https://developercommunity.visualstudio.com/t/stdc11-should-add-max-align-t-to-stddefh/1386891>
  * <https://github.com/emscripten-core/emscripten/pull/8908>
  */
-#else
-union bl_priv_max_align {
+#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 202311L  /* C23 */
+struct bl_priv_max_align {
+	alignas(long long)   long long _bl_priv_ll;
+	alignas(long double) long double _bl_priv_ld;
+};
+#define BL_ALIGNMENT alignof(struct bl_priv_max_align)
+#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
+struct bl_priv_max_align {
+	_Alignas(long long)   long long _bl_priv_ll;
+	_Alignas(long double) long double _bl_priv_ld;
+};
+#define BL_ALIGNMENT _Alignof(struct bl_priv_max_align)
+#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L  /* C99 */
+#if defined _MSC_VER
+struct bl_priv_max_align {
 	long long _bl_priv_ll;
 	long double _bl_priv_ld;
 };
-#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 202311L  /* C23 */
-#define BL_ALIGNMENT alignof(union bl_priv_max_align)
-#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
-#define BL_ALIGNMENT _Alignof(union bl_priv_max_align)
-#elif defined _MSC_VER
 /* <https://learn.microsoft.com/en-us/cpp/cpp/alignment-cpp-declarations?view=msvc-170> */
-#define BL_ALIGNMENT __alignof(union bl_priv_max_align)
+#define BL_ALIGNMENT __alignof(struct bl_priv_max_align)
 #elif defined __GNUC__
 /* <https://gcc.gnu.org/onlinedocs/gcc-2.95.3/gcc_4.html#SEC89> */
-#define BL_ALIGNMENT __alignof__(union bl_priv_max_align)
+struct bl_priv_max_align {
+	long long _bl_priv_ll
+		__attribute__((__aligned__(__alignof__(long long))));
+	long double _bl_priv_ld
+		__attribute__((__aligned__(__alignof__(long double))));
+};
+#define BL_ALIGNMENT __alignof__(struct bl_priv_max_align)
 #else
 /* C99 and earlier standards don't support `_Alignof`. */
-struct bl_priv_max_align99 {
+struct bl_priv_max_align {
 	char _bl_priv_c;
-	union bl_priv_max_align _bl_priv_a;
+	struct {
+		long long _bl_priv_ll;
+		long double _bl_priv_ld;
+	} _bl_priv_a;
 };
-#define BL_ALIGNMENT offsetof(struct bl_priv_max_align99, _bl_priv_a)
+#define BL_ALIGNMENT offsetof(struct bl_priv_max_align, _bl_priv_a)
 #endif
 #endif
 #endif
