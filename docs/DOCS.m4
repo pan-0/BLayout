@@ -50,7 +50,8 @@ Pagenumbering(arabic)
 
 ## Types
 ```c
-typedef size_t blsize;
+typedef uintptr_t bluptr;
+typedef size_t    blsize;
 
 struct blayout {
 	blsize nmemb;
@@ -58,6 +59,7 @@ struct blayout {
 	blsize align;
 };
 ```
+* `bluptr` is used internally to cast `void *` pointers to an integer type, where arithmetic may be performed. This is required for returning properly aligned pointers and such. Since the default, `uintptr_t`, is only available from C99 onwards, this `typedef` is provided to ease porting when using an earlier C standard and/or implementations where such a type is not offered. The header assumes that casting a `void *` pointer to `uintptr_t` leaves the bits unchanged or zero-extends, in case the latter is wider. A round-trip conversion, using the types above, is guaranteed by the C standard to result to a pointer referencing the same object as the original pointer. These semantics match the implementations offered by [GCC](https://gcc.gnu.org/onlinedocs/gcc/Arrays-and-pointers-implementation.html) and Clang.
 * `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZEMAX` accordingly (see [below](#constants)).
 * `blayout` describes a layout for a single object, where:
   - `nmemb` is the number of elements this object will hold (like `calloc()`'s first argument),

@@ -28,7 +28,8 @@ author: pan <pan_@disroot.org>
 
 ## Types
 ```c
-typedef size_t blsize;
+typedef uintptr_t bluptr;
+typedef size_t    blsize;
 
 struct blayout {
 	blsize nmemb;
@@ -36,6 +37,7 @@ struct blayout {
 	blsize align;
 };
 ```
+* `bluptr` is used internally to cast `void *` pointers to an integer type, where arithmetic may be performed. This is required for returning properly aligned pointers and such. Since the default, `uintptr_t`, is only available from C99 onwards, this `typedef` is provided to ease porting when using an earlier C standard and/or implementations where such a type is not offered. The header assumes that casting a `void *` pointer to `uintptr_t` leaves the bits unchanged or zero-extends, in case the latter is wider. A round-trip conversion, using the types above, is guaranteed by the C standard to result to a pointer referencing the same object as the original pointer. These semantics match the implementations offered by [GCC](https://gcc.gnu.org/onlinedocs/gcc/Arrays-and-pointers-implementation.html) and Clang.
 * `blsize` is the API's size type. It's `size_t` by default. You may change this type by modifying BLayout's header. A `signed` type is also valid. You'd have to change `BL_SIZEMAX` accordingly (see [below](#constants)).
 * `blayout` describes a layout for a single object, where:
   - `nmemb` is the number of elements this object will hold (like `calloc()`'s first argument),
@@ -63,10 +65,11 @@ _Note: To override these, either modify BLayout's header or `#define` them **bef
 * `BL_API` is currently only used as a visual aid, do **not** try to change it.
 * BLayout can use assertions through the `BL_ASSERT` macro to enforce API contracts and prevent footguns. You can override this macro if you use a custom `assert()` function. See `BL_DEBUG` below if you want to disable assertions.
 * Every function is `inline` (C99 [semantics](https://lists.llvm.org/pipermail/llvm-dev/2021-August/152031.html)) through the `BL_INLINE` macro. This is so that you can workaround C's deficiencies, if you so wish.
-* `BL_DEBUG` can be defined to three possible values:
+* `BL_DEBUG` can be defined to four possible values:
   - $0$, where BLayout will use **no** assertions (see above) and, in addition, will try to use compiler-specific annotations (e.g. `attribute(nonnull(...))`) in a portable and non-intrusive manner. This is the default.
   - $1$, where BLayout will use **some** assertions and annotations.
   - $2$, where BLayout will use **all** assertions **and no** annotations.
+  - $3$, where the behavior is identical to $2$, but BLayout will try to use inline assertions instead, which would potentially - depending on the implementation - show better error messages if triggered. Additionally, BLayout will try to statically determine if function input arguments are valid at compile time. This option is meant to be used only during development and is only supported under GCC and Clang compilers.
 * `BL_CONST` can be used to include `const`-aware functions (see [below](#functions)). It's not defined by default, but can be to four possible values:
   - $0$, where no `const`-aware functions will be included. The behavior is the same as if `BL_CONST` wasn't defined. This is the default.
   - $1$, where BLayout will include `const`-aware functions (`blnextc()`, `blprevc()`; see [below](#functions)).
