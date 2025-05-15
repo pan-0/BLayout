@@ -34,6 +34,7 @@ Only freestanding headers are required:
 
 * `<assert.h>` _(optional)_
 * `<stddef.h>`
+  - `NULL`
   - `max_align_t` _(optional)_
   - `ptrdiff_t`
   - `size_t` _(overridable)_
