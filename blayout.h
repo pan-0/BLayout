@@ -84,7 +84,7 @@
             __builtin_choose_expr(__builtin_constant_p((x)), (x), 1), \
             __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"' failed; " msg); \
         if (!__builtin_constant_p((x)))                               \
-            BL_ASSERT(_x && #x msg);                                  \
+            BL_ASSERT((_x) && #x msg);                                \
     }))
 #elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
 #define BL_PRIV_IASSERT(x, _x, msg)                                   \
@@ -93,18 +93,18 @@
             __builtin_choose_expr(__builtin_constant_p((x)), (x), 1), \
             __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"' failed; " msg); \
         if (!__builtin_constant_p((x)))                               \
-            BL_ASSERT(_x && #x msg);                                  \
+            BL_ASSERT((_x) && #x msg);                                \
     }))
 #else
 #undef BL_PRIV_STR
 #undef BL_PRIV_STR_
 #define BL_PRIV_IASSERT(x, _x, msg)                           \
     (__extension__ ({                                         \
-        struct _bl_iassert {                                  \
-            unsigned : __builtin_constant_p((x)) ? -!(x) : 1; \
+        struct _bl_priv_iassert {                             \
+            unsigned : __builtin_constant_p((x)) ? -!(x) : 0; \
         };                                                    \
         if (!__builtin_constant_p((x)))                       \
-            BL_ASSERT(_x && #x msg);                          \
+            BL_ASSERT((_x) && #x msg);                        \
     }))
 #endif
 #endif

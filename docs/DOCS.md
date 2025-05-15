@@ -117,7 +117,7 @@ BL_API const void *blprevc(const void *ptr, blsize prev_size, blsize prev_align)
 
 Keep in mind that the signatures above are for reference. The actual implementation may significantly differ. For example, some functions may be implemented as a macro, meaning that you can't take their address. However, it's guaranteed that all arguments will be evaluated, and each will be evaluated once. Further, you can be assured that your lexical scope won't be polluted.
 
-[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a power of $2$.
+[^1]: [**alignment**](https://en.wikipedia.org/wiki/Data_structure_alignment) is _always assumed to be valid_: (1) it denotes _byte_ boundaries and (2) is a power of `2`.
 [^2]: Meaning, every type that is not _over-aligned_: that does **not** have [extended alignment](https://port70.net/~nsz/c/c11/n1570.html#6.2.8p3).
 
 # Terminology
