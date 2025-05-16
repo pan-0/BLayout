@@ -82,7 +82,7 @@
     (__extension__ ({                                             \
         static_assert(                                            \
             __builtin_choose_expr(__builtin_constant_p(x), x, 1), \
-            __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"' failed; " msg); \
+            __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"` failed; " msg); \
         if (!__builtin_constant_p(x))                             \
             BL_ASSERT((_x) && #x msg);                            \
     }))
@@ -91,7 +91,7 @@
     (__extension__ ({                                             \
         _Static_assert(                                           \
             __builtin_choose_expr(__builtin_constant_p(x), x, 1), \
-            __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"' failed; " msg); \
+            __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"` failed; " msg); \
         if (!__builtin_constant_p(x))                             \
             BL_ASSERT((_x) && #x msg);                            \
     }))
