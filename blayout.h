@@ -78,33 +78,33 @@
 #define BL_PRIV_STR_(X) #X
 #define BL_PRIV_STR(X)  BL_PRIV_STR_(X)
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 202311L  /* C23 */
-#define BL_PRIV_IASSERT(x, _x, msg)                                   \
-    (__extension__ ({                                                 \
-        static_assert(                                                \
-            __builtin_choose_expr(__builtin_constant_p((x)), (x), 1), \
+#define BL_PRIV_IASSERT(x, _x, msg)                               \
+    (__extension__ ({                                             \
+        static_assert(                                            \
+            __builtin_choose_expr(__builtin_constant_p(x), x, 1), \
             __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"' failed; " msg); \
-        if (!__builtin_constant_p((x)))                               \
-            BL_ASSERT((_x) && #x msg);                                \
+        if (!__builtin_constant_p(x))                             \
+            BL_ASSERT((_x) && #x msg);                            \
     }))
 #elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
-#define BL_PRIV_IASSERT(x, _x, msg)                                   \
-    (__extension__ ({                                                 \
-        _Static_assert(                                               \
-            __builtin_choose_expr(__builtin_constant_p((x)), (x), 1), \
+#define BL_PRIV_IASSERT(x, _x, msg)                               \
+    (__extension__ ({                                             \
+        _Static_assert(                                           \
+            __builtin_choose_expr(__builtin_constant_p(x), x, 1), \
             __FILE__":"BL_PRIV_STR(__LINE__)": Static assertion `"#x"' failed; " msg); \
-        if (!__builtin_constant_p((x)))                               \
-            BL_ASSERT((_x) && #x msg);                                \
+        if (!__builtin_constant_p(x))                             \
+            BL_ASSERT((_x) && #x msg);                            \
     }))
 #else
 #undef BL_PRIV_STR
 #undef BL_PRIV_STR_
-#define BL_PRIV_IASSERT(x, _x, msg)                           \
-    (__extension__ ({                                         \
-        struct _bl_priv_iassert {                             \
-            unsigned : __builtin_constant_p((x)) ? -!(x) : 0; \
-        };                                                    \
-        if (!__builtin_constant_p((x)))                       \
-            BL_ASSERT((_x) && #x msg);                        \
+#define BL_PRIV_IASSERT(x, _x, msg)                         \
+    (__extension__ ({                                       \
+        struct _bl_priv_iassert {                           \
+            unsigned : __builtin_constant_p(x) ? -!(x) : 0; \
+        };                                                  \
+        if (!__builtin_constant_p(x))                       \
+            BL_ASSERT((_x) && #x msg);                      \
     }))
 #endif
 #endif
@@ -136,13 +136,13 @@
  */
 #elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 202311L  /* C23 */
 struct bl_priv_max_align {
-	alignas(long long)   long long _bl_priv_ll;
+	alignas(long long) long long _bl_priv_ll;
 	alignas(long double) long double _bl_priv_ld;
 };
 #define BL_ALIGNMENT alignof(struct bl_priv_max_align)
 #elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
 struct bl_priv_max_align {
-	_Alignas(long long)   long long _bl_priv_ll;
+	_Alignas(long long) long long _bl_priv_ll;
 	_Alignas(long double) long double _bl_priv_ld;
 };
 #define BL_ALIGNMENT _Alignof(struct bl_priv_max_align)
