@@ -7,6 +7,8 @@
 #include <stddef.h>  /* size_t, ptrdiff_t */
 #include <stdint.h>  /* SIZE_MAX, uintptr_t */
 
+#define BLALIGNED(size, align) ((size) + (~((size) - 1) & ((align) - 1)))
+
 struct blayout {
 	size_t nmemb;
 	size_t size;
@@ -64,5 +66,11 @@ inline static size_t blsizeof(const struct blayout *l)
 {
 	return l->nmemb * l->size;
 }
+
+inline static void *blmemb(void *obj, size_t size, ptrdiff_t idx)
+{
+	return (char *)obj + (ptrdiff_t)size * idx;
+}
+//#define blmemb(obj, size, idx) ((char *)(obj) + (size) * (idx))
 
 #endif  /* BLAYOUT_H */

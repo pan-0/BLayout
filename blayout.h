@@ -41,8 +41,29 @@
 
 
 /*
+ * Types.
+ */
+
+typedef size_t blsize;       /* Can also be a `signed` type. */
+#ifndef BL_SIZEMAX
+#define BL_SIZEMAX SIZE_MAX  /* Must be in (0, SIZE_MAX]. */
+#endif
+
+typedef uintptr_t bluptr;
+
+struct blayout {
+	blsize nmemb;
+	blsize size;
+	blsize align;
+};
+
+
+/*
  * Boilerplate.
  */
+
+#define BLALIGNED(size, align) \
+	((size_t)(size) + (~((size_t)(size) - 1) & ((size_t)(align) - 1)))
 
 #if defined BL_CONST && !(BL_CONST >= 0 && BL_CONST <= 3)
 #error "invalid `BL_CONST` value, must be `0`, `1`, `2` or `3`"
@@ -191,23 +212,16 @@ struct bl_priv_max_align {
 #define BL_PRIV_UNLIKELY(x) (x)
 #endif
 
-
-/*
- * Types.
- */
-
-typedef size_t blsize;       /* Can also be a `signed` type. */
-#ifndef BL_SIZEMAX
-#define BL_SIZEMAX SIZE_MAX  /* Must be in (0, SIZE_MAX]. */
+#if (!defined BL_DEBUG || BL_DEBUG == 0) && !BL_PRIV_INLINE_USER
+#if defined __GNUC__
+#define BL_PRIV_INLINE_ALWAYS BL_PRIV_ATTR(__always_inline__) BL_INLINE
+#elif defined _MSC_VER
+#define BL_PRIV_INLINE_ALWAYS __forceinline
 #endif
-
-typedef uintptr_t bluptr;
-
-struct blayout {
-	blsize nmemb;
-	blsize size;
-	blsize align;
-};
+#endif
+#ifndef BL_PRIV_INLINE_ALWAYS
+#define BL_PRIV_INLINE_ALWAYS BL_INLINE
+#endif
 
 
 /*
@@ -216,23 +230,16 @@ struct blayout {
 
 #if defined __GNUC__
 __attribute__((__pure__))  /* <- always use _some_ attributes. */
-#if !BL_PRIV_INLINE_USER
-BL_PRIV_ATTR(__always_inline__)
 #endif
-BL_INLINE
-#elif !BL_PRIV_INLINE_USER && defined _MSC_VER
-__forceinline
-#else
-BL_INLINE
-#endif
-BL_API blsize bl_priv_calc(const blsize _align,
-                           const ptrdiff_t _offs,
-                           const blsize _n,
-                           const struct blayout *const _lays,
-                           const blsize _prev_size)
+BL_PRIV_INLINE_ALWAYS
+BL_API blsize bl_priv_calc(register const blsize _align,
+                           register const ptrdiff_t _offs,
+                           register const blsize _n,
+                           register const struct blayout *const _lays,
+                           register const blsize _prev_size)
 {
-	const size_t _base = (size_t)_align + (size_t)_offs;
-	size_t _pos = _base;
+	register const size_t _base = (size_t)_align + (size_t)_offs;
+	register size_t _pos = _base;
 
 #if defined BL_DEBUG && BL_DEBUG >= 1 && !defined BL_PRIV_IASSERT
 	BL_ASSERT(_align > 0 && "`align` must be a power of 2");
@@ -251,7 +258,7 @@ BL_API blsize bl_priv_calc(const blsize _align,
 
 	_pos += (size_t)_prev_size;
 	{
-		blsize _i;
+		register blsize _i;
 		for (_i = 0; _i < _n; ++_i) {
 			const struct blayout _l = _lays[_i];
 #if defined BL_DEBUG && BL_DEBUG >= 1
@@ -267,8 +274,9 @@ BL_API blsize bl_priv_calc(const blsize _align,
 				return 0;
 
 			{
-				size_t _size = (size_t)_l.nmemb * (size_t)_l.size;
-				const size_t _pad = ~(_pos - 1) & ((size_t)_l.align - 1);
+				register size_t _size = (size_t)_l.nmemb * (size_t)_l.size;
+				register const size_t _pad =
+					~(_pos - 1) & ((size_t)_l.align - 1);
 				if (BL_PRIV_UNLIKELY(_size + _pad < _size))
 					return 0;
 
@@ -291,10 +299,10 @@ BL_API blsize bl_priv_calc(const blsize _align,
 BL_PRIV_ATTR(__returns_nonnull__) BL_PRIV_ATTR(__nonnull__(1))
 __attribute__((__alloc_align__(3)))
 #endif
-BL_INLINE
-BL_API void *bl_priv_next(void *_ptr,
-                          const blsize _curr_size,
-                          const blsize _next_align)
+BL_PRIV_INLINE_ALWAYS
+BL_API void *bl_priv_next(register void *_ptr,
+                          register const blsize _curr_size,
+                          register const blsize _next_align)
 {
 #if defined BL_DEBUG && !defined BL_PRIV_IASSERT
 #if BL_DEBUG >= 2
@@ -309,8 +317,8 @@ BL_API void *bl_priv_next(void *_ptr,
 #endif
 	_ptr = (char *)_ptr + _curr_size;
 	{
-		const size_t _pad = (size_t)(~((bluptr)_ptr - 1)
-		                             & ((size_t)_next_align - 1));
+		register const size_t _pad = (size_t)(~((bluptr)_ptr - 1)
+		                                      & ((size_t)_next_align - 1));
 		return (char *)_ptr + _pad;
 	}
 }
@@ -324,14 +332,14 @@ __attribute__((__alloc_align__(3)))
  */
 /*__attribute__((__alloc_size__(2)))*/
 #endif
-BL_INLINE
-BL_API void *bl_priv_prev(void *_ptr,
-                          const blsize _prev_size,
-                          const blsize _prev_align)
+BL_PRIV_INLINE_ALWAYS
+BL_API void *bl_priv_prev(register void *_ptr,
+                          register const blsize _prev_size,
+                          register const blsize _prev_align)
 {
 #if defined BL_DEBUG && !defined BL_PRIV_IASSERT
 #if BL_DEBUG >= 2
-	BL_ASSERT(_ptr != NULL && "`ptr` cant be NULL");
+	BL_ASSERT(_ptr != NULL && "`ptr` can't be NULL");
 #endif
 #if BL_DEBUG >= 1
 	BL_ASSERT(_prev_size > 0 && _prev_size <= SIZE_MAX
@@ -343,10 +351,30 @@ BL_API void *bl_priv_prev(void *_ptr,
 #endif
 	_ptr = (char *)_ptr - _prev_size;
 	{
-		const size_t _pad = (size_t)((bluptr)_ptr
-		                             & ((size_t)_prev_align - 1));
+		register const size_t _pad = (size_t)((bluptr)_ptr
+		                                      & ((size_t)_prev_align - 1));
 		return (char *)_ptr - _pad;
 	}
+}
+
+#ifdef __GNUC__
+/* This can be lifted in the future, once `NULL + 0` becomes defined. */
+BL_PRIV_ATTR(__returns_nonnull__) BL_PRIV_ATTR(__nonnull__(1))
+#endif
+BL_PRIV_INLINE_ALWAYS
+BL_API void *bl_priv_memb(register void *const _obj,
+                          register const blsize _size,
+                          register const ptrdiff_t _idx)
+{
+#if defined BL_DEBUG && !defined BL_PRIV_IASSERT
+#if BL_DEBUG >= 2
+	BL_ASSERT(_obj != NULL && "`obj` can't be NULL");
+#endif
+#if BL_DEBUG >= 1
+	BL_ASSERT(_size > 0 && "`size` must be in (0, SIZE_MAX]");
+#endif
+#endif
+	return (char *)_obj + (ptrdiff_t)_size * _idx;
 }
 
 #if defined BL_CONST && BL_CONST >= 1
@@ -370,10 +398,10 @@ BL_API void *bl_priv_prev(void *_ptr,
 BL_PRIV_ATTR(__returns_nonnull__) BL_PRIV_ATTR(__nonnull__(1))
 __attribute__((__alloc_align__(3)))
 #endif
-BL_INLINE
-BL_API const void *bl_priv_nextc(const void *_ptr,
-                                 const blsize _curr_size,
-                                 const blsize _next_align)
+BL_PRIV_INLINE_ALWAYS
+BL_API const void *bl_priv_nextc(register const void *_ptr,
+                                 register const blsize _curr_size,
+                                 register const blsize _next_align)
 {
 #if defined BL_DEBUG && !defined BL_PRIV_IASSERT
 #if BL_DEBUG >= 2
@@ -388,8 +416,8 @@ BL_API const void *bl_priv_nextc(const void *_ptr,
 #endif
 	_ptr = (const char *)_ptr + _curr_size;
 	{
-		const size_t _pad = (size_t)(~((bluptr)_ptr - 1)
-		                             & ((size_t)_next_align - 1));
+		register const size_t _pad = (size_t)(~((bluptr)_ptr - 1)
+		                                      & ((size_t)_next_align - 1));
 		return (const char *)_ptr + _pad;
 	}
 }
@@ -399,14 +427,14 @@ BL_PRIV_ATTR(__returns_nonnull__) BL_PRIV_ATTR(__nonnull__(1))
 __attribute__((__alloc_align__(3)))
 /*__attribute__((__alloc_size__(2)))*/
 #endif
-BL_INLINE
-BL_API const void *bl_priv_prevc(const void *_ptr,
-                                 const blsize _prev_size,
-                                 const blsize _prev_align)
+BL_PRIV_INLINE_ALWAYS
+BL_API const void *bl_priv_prevc(register const void *_ptr,
+                                 register const blsize _prev_size,
+                                 register const blsize _prev_align)
 {
 #if defined BL_DEBUG && !defined BL_PRIV_IASSERT
 #if BL_DEBUG >= 2
-	BL_ASSERT(_ptr != NULL && "`ptr` cant be NULL");
+	BL_ASSERT(_ptr != NULL && "`ptr` can't be NULL");
 #endif
 #if BL_DEBUG >= 1
 	BL_ASSERT(_prev_size > 0 && _prev_size <= SIZE_MAX
@@ -418,10 +446,29 @@ BL_API const void *bl_priv_prevc(const void *_ptr,
 #endif
 	_ptr = (const char *)_ptr - _prev_size;
 	{
-		const size_t _pad = (size_t)((bluptr)_ptr
-		                             & ((size_t)_prev_align - 1));
+		register const size_t _pad = (size_t)((bluptr)_ptr
+		                                      & ((size_t)_prev_align - 1));
 		return (const char *)_ptr - _pad;
 	}
+}
+
+#ifdef __GNUC__
+BL_PRIV_ATTR(__returns_nonnull__) BL_PRIV_ATTR(__nonnull__(1))
+#endif
+BL_PRIV_INLINE_ALWAYS
+BL_API const void *bl_priv_membc(register const void *const _obj,
+                                 register const blsize _size,
+                                 register const ptrdiff_t _idx)
+{
+#if defined BL_DEBUG && !defined BL_PRIV_IASSERT
+#if BL_DEBUG >= 2
+	BL_ASSERT(_obj != NULL && "`obj` can't be NULL");
+#endif
+#if BL_DEBUG >= 1
+	BL_ASSERT(_size > 0 && "`size` must be in (0, SIZE_MAX]");
+#endif
+#endif
+	return (const char *)_obj + (ptrdiff_t)_size * _idx;
 }
 
 #endif  /* `const`-qualified variants. */
@@ -434,33 +481,55 @@ BL_API const void *bl_priv_prevc(const void *_ptr,
 	bl_priv_nextc(ptr, curr_size, next_align)
 #define blprevc(ptr, prev_size, prev_align) \
 	bl_priv_nextc(ptr, prev_size, prev_align)
+#define blmembc(obj, size, idx) bl_priv_membc(obj, size, idx)
+
+#if defined __GNUC__ && (!defined BL_DEBUG || BL_DEBUG == 0)
+__attribute__((__const__))
+#endif
+BL_PRIV_INLINE_ALWAYS
+BL_API blsize blaligned(register const blsize _size,
+                        register const blsize _align)
+{
+#if defined BL_DEBUG && BL_DEBUG >= 1
+	BL_ASSERT(_size > 0 && _size <= SIZE_MAX
+	          && "`size` must be in (0, SIZE_MAX]");
+	BL_ASSERT(_align > 0 && "`align` must be a power of 2");
+	BL_ASSERT(((size_t)_align & ((size_t)_align - 1)) == 0
+	          && "`align` must be a power of 2");
+#endif
+	register const size_t _r = BLALIGNED(_size, _align);
+#if defined BL_DEBUG && BL_DEBUG >= 1
+	BL_ASSERT(_r >= (size_t)_size && "detected wrap-around in `blaligned()`");
+	BL_ASSERT(_r <= (size_t)BL_SIZEMAX
+	          && "`blaligned()` result can't fit in `blsize`");
+#endif
+	return (blsize)_r;
+}
 
 #ifdef __GNUC__
 BL_PRIV_ATTR(__nonnull__(1)) __attribute__((__pure__))
-#if !BL_PRIV_INLINE_USER
-BL_PRIV_ATTR(__always_inline__)
 #endif
-#endif
-BL_INLINE
-BL_API blsize blsizeof(const struct blayout *const _l)
+BL_PRIV_INLINE_ALWAYS
+BL_API blsize blsizeof(register const struct blayout *const _l)
 {
 #if defined BL_DEBUG && BL_DEBUG >= 2
 	BL_ASSERT(_l != NULL && "`l` cannot be NULL");
 #endif
 	{
-		const blsize _nmemb = _l->nmemb;
+		register const blsize _nmemb = _l->nmemb;
 #if defined BL_DEBUG && BL_DEBUG >= 1
 		BL_ASSERT(_nmemb > 0 && _nmemb <= SIZE_MAX
 				  && "layout `.nmemb` must be in (0, SIZE_MAX]");
 #endif
 		{
-			const blsize _size = _l->size;
+			register const blsize _size = _l->size;
 #if defined BL_DEBUG && BL_DEBUG >= 1
 			BL_ASSERT(_size > 0 && _size <= SIZE_MAX
 					  && "layout `.size` must be in (0, SIZE_MAX]");
 			BL_ASSERT(!(_nmemb > BL_SIZEMAX / _size)
 					  && "object layout is too large");
-			BL_ASSERT(_l->align > 0 && "layout alignment must be a power of 2");
+			BL_ASSERT(_l->align > 0
+			          && "layout alignment must be a power of 2");
 			BL_ASSERT(((size_t)_l->align & ((size_t)_l->align - 1)) == 0
 					  && "layout alignment must be a power of 2");
 #endif
@@ -474,6 +543,7 @@ BL_API blsize blsizeof(const struct blayout *const _l)
 	bl_priv_next(ptr, curr_size, next_align)
 #define blprev(ptr, prev_size, prev_align) \
 	bl_priv_prev(ptr, prev_size, prev_align)
+#define blmemb(obj, size, idx) bl_priv_memb(obj, size, idx)
 #elif defined BL_CONST && BL_CONST >= 2
 /*
  * (Ab)use the conditional operator. See the examples included in the C
@@ -488,11 +558,17 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     _Generic(1 ? (ptr) : BL_PRIV_UNCONST(ptr),                        \
              void *:       bl_priv_prev,                              \
              const void *: bl_priv_prevc)(ptr, prev_size, prev_align)
+#define blmemb(obj, size, idx)                            \
+    _Generic(1 ? (obj) : BL_PRIV_UNCONST(obj),            \
+             void *:       bl_priv_memb,                  \
+             const void *: bl_priv_membc)(obj, size, idx)
 #else
 #define blnext(ptr, curr_size, next_align) \
 	(1 ? bl_priv_next(BL_PRIV_UNCONST(ptr), curr_size, next_align) : (ptr))
 #define blprev(ptr, prev_size, prev_align) \
 	(1 ? bl_priv_prev(BL_PRIV_UNCONST(ptr), prev_size, prev_align) : (ptr))
+#define blmemb(obj, size, idx) \
+	(1 ? bl_priv_memb(BL_PRIV_UNCONST(obj), size, idx) : (obj))
 #endif
 #endif
 
@@ -527,7 +603,7 @@ BL_API blsize blsizeof(const struct blayout *const _l)
 
 #define blcalc(align, offs, n, lays, prev_size)                       \
     BL_PRIV_STMT_EXPR_BEGIN                                           \
-    const blsize _bl_priv_align = (align);                            \
+    register const blsize _bl_priv_align = (align);                   \
     BL_PRIV_IASSERT((align) > 0, _bl_priv_align > 0,                  \
                     "`align` must be a power of 2");                  \
     BL_PRIV_IASSERT(                                                  \
@@ -536,7 +612,7 @@ BL_API blsize blsizeof(const struct blayout *const _l)
         "`align` must be a power of 2");                              \
     BL_PRIV_STMT_EXPR_RET_SUB                                         \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
-    const ptrdiff_t _bl_priv_offs = (offs);                           \
+    register const ptrdiff_t _bl_priv_offs = (offs);                  \
     BL_PRIV_IASSERT((offs) >= 0, _bl_priv_offs >= 0,                  \
                     "`offs` must be non-negative");                   \
     BL_PRIV_IASSERT(                                                  \
@@ -545,18 +621,18 @@ BL_API blsize blsizeof(const struct blayout *const _l)
         "detected wrap-around; too large `align` and/or `offs`");     \
     BL_PRIV_STMT_EXPR_RET_SUB                                         \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
-    const blsize _bl_priv_n = (n);                                    \
+    register const blsize _bl_priv_n = (n);                           \
     BL_PRIV_IASSERT((n) > 0 && (n) <= SIZE_MAX,                       \
                     _bl_priv_n > 0 && _bl_priv_n <= SIZE_MAX,         \
                     "`n` must be in (0, SIZE_MAX]");                  \
     BL_PRIV_STMT_EXPR_RET_SUB                                         \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
-    const struct blayout *const _bl_priv_lays = (lays);               \
+    register const struct blayout *const _bl_priv_lays = (lays);      \
     BL_PRIV_IASSERT((lays) != NULL, _bl_priv_lays != NULL,            \
                     "`lays` must point to a non-zero-sized array");   \
     BL_PRIV_STMT_EXPR_RET_SUB                                         \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
-    const blsize _bl_priv_prev_size = (prev_size);                    \
+    register const blsize _bl_priv_prev_size = (prev_size);           \
     BL_PRIV_STMT_EXPR_RET bl_priv_calc(_bl_priv_align,                \
                                        _bl_priv_offs,                 \
                                        _bl_priv_n,                    \
@@ -571,13 +647,13 @@ BL_API blsize blsizeof(const struct blayout *const _l)
 #if defined BL_CONST && BL_CONST >= 1
 #define blnextc(ptr, curr_size, next_align)                                   \
     BL_PRIV_STMT_EXPR_BEGIN                                                   \
-    const void *const _bl_priv_ptr = (ptr);                                   \
+    register const void *const _bl_priv_ptr = (ptr);                          \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,                      \
                     "`ptr` cannot be NULL");                                  \
     BL_PRIV_STMT_EXPR_RET_SUB                                                 \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                               \
-    const blsize _bl_priv_curr_size = (curr_size);                            \
-    const blsize _bl_priv_next_align = (next_align);                          \
+    register const blsize _bl_priv_curr_size = (curr_size);                   \
+    register const blsize _bl_priv_next_align = (next_align);                 \
     BL_PRIV_IASSERT((next_align) > 0, _bl_priv_next_align > 0,                \
                     "`next_align` must be a power of 2");                     \
     BL_PRIV_IASSERT(                                                          \
@@ -590,19 +666,19 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END
 #define blprevc(ptr, prev_size, prev_align)                                   \
     BL_PRIV_STMT_EXPR_BEGIN                                                   \
-    const void *const _bl_priv_ptr = (ptr);                                   \
+    register const void *const _bl_priv_ptr = (ptr);                          \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,                      \
                     "`ptr` cannot be NULL");                                  \
     BL_PRIV_STMT_EXPR_RET_SUB                                                 \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                               \
-    const blsize _bl_priv_prev_size = (prev_size);                            \
+    register const blsize _bl_priv_prev_size = (prev_size);                   \
     BL_PRIV_IASSERT((prev_size) > 0, _bl_priv_prev_size > 0,                  \
                     "`prev_size` must be in (0, SIZE_MAX]");                  \
     BL_PRIV_IASSERT((prev_size) <= SIZE_MAX, _bl_priv_prev_size <= SIZE_MAX,  \
                     "`prev_size` must be in (0, SIZE_MAX]");                  \
     BL_PRIV_STMT_EXPR_RET_SUB                                                 \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                               \
-    const blsize _bl_priv_prev_align = (prev_align);                          \
+    register const blsize _bl_priv_prev_align = (prev_align);                 \
     BL_PRIV_IASSERT((prev_align) > 0, _bl_priv_prev_align > 0,                \
                     "`prev_align` must be a power of 2");                     \
     BL_PRIV_IASSERT(                                                          \
@@ -614,18 +690,37 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                 \
     BL_PRIV_STMT_EXPR_END_SUB                                                 \
     BL_PRIV_STMT_EXPR_END
+#define blmembc(obj, size, idx)                          \
+    BL_PRIV_STMT_EXPR_BEGIN                              \
+    register const void *const _bl_priv_obj = (obj);     \
+    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL, \
+                    "`obj` can't be NULL");              \
+    BL_PRIV_STMT_EXPR_RET_SUB                            \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
+    register const blsize _bl_priv_size = (size);        \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,       \
+                    "`size` must be in (0, SIZE_MAX]");  \
+    BL_PRIV_STMT_EXPR_RET_SUB                            \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
+    register const ptrdiff_t _bl_priv_idx = (idx);       \
+    BL_PRIV_STMT_EXPR_RET bl_priv_membc(_bl_priv_obj,    \
+                                        _bl_priv_size,   \
+                                        _bl_priv_idx);   \
+    BL_PRIV_STMT_EXPR_END_SUB                            \
+    BL_PRIV_STMT_EXPR_END_SUB                            \
+    BL_PRIV_STMT_EXPR_END
 #endif
 
 #if !defined BL_CONST || BL_CONST <= 1
 #define blnext(ptr, curr_size, next_align)                                   \
     BL_PRIV_STMT_EXPR_BEGIN                                                  \
-    void *const _bl_priv_ptr = (ptr);                                        \
+    register void *const _bl_priv_ptr = (ptr);                               \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,                     \
                     "`ptr` cannot be NULL");                                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_curr_size = (curr_size);                           \
-    const blsize _bl_priv_next_align = (next_align);                         \
+    register const blsize _bl_priv_curr_size = (curr_size);                  \
+    register const blsize _bl_priv_next_align = (next_align);                \
     BL_PRIV_IASSERT((next_align) > 0, _bl_priv_next_align > 0,               \
                     "`next_align` must be a power of 2");                    \
     BL_PRIV_IASSERT(                                                         \
@@ -638,19 +733,19 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END
 #define blprev(ptr, prev_size, prev_align)                                   \
     BL_PRIV_STMT_EXPR_BEGIN                                                  \
-    void *const _bl_priv_ptr = (ptr);                                        \
+    register void *const _bl_priv_ptr = (ptr);                               \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,                     \
                     "`ptr` cannot be NULL");                                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_prev_size = (prev_size);                           \
+    register const blsize _bl_priv_prev_size = (prev_size);                  \
     BL_PRIV_IASSERT((prev_size) > 0, _bl_priv_prev_size > 0,                 \
                     "`prev_size` must be in (0, SIZE_MAX]");                 \
     BL_PRIV_IASSERT((prev_size) <= SIZE_MAX, _bl_priv_prev_size <= SIZE_MAX, \
                     "`prev_size` must be in (0, SIZE_MAX]");                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_prev_align = (prev_align);                         \
+    register const blsize _bl_priv_prev_align = (prev_align);                \
     BL_PRIV_IASSERT((prev_align) > 0, _bl_priv_prev_align > 0,               \
                     "`prev_align` must be a power of 2");                    \
     BL_PRIV_IASSERT(                                                         \
@@ -662,17 +757,36 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END
+#define blmemb(obj, size, idx)                           \
+    BL_PRIV_STMT_EXPR_BEGIN                              \
+    register void *const _bl_priv_obj = (obj);           \
+    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL, \
+                    "`obj` can't be NULL");              \
+    BL_PRIV_STMT_EXPR_RET_SUB                            \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
+    register const blsize _bl_priv_size = (size);        \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,       \
+                    "`size` must be in (0, SIZE_MAX]");  \
+    BL_PRIV_STMT_EXPR_RET_SUB                            \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
+    register const ptrdiff_t _bl_priv_idx = (idx);       \
+    BL_PRIV_STMT_EXPR_RET bl_priv_memb(_bl_priv_obj,     \
+                                       _bl_priv_size,    \
+                                       _bl_priv_idx);    \
+    BL_PRIV_STMT_EXPR_END_SUB                            \
+    BL_PRIV_STMT_EXPR_END_SUB                            \
+    BL_PRIV_STMT_EXPR_END
 #elif defined BL_CONST && BL_CONST >= 2
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
 #define blnext(ptr, curr_size, next_align)                        \
     BL_PRIV_STMT_EXPR_BEGIN                                       \
-    void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);              \
+    register void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);     \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,          \
                     "`ptr` cannot be NULL");                      \
     BL_PRIV_STMT_EXPR_RET_SUB                                     \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                   \
-    const blsize _bl_priv_curr_size = (curr_size);                \
-    const blsize _bl_priv_next_align = (next_align);              \
+    register const blsize _bl_priv_curr_size = (curr_size);       \
+    register const blsize _bl_priv_next_align = (next_align);     \
     BL_PRIV_IASSERT((next_align) > 0, _bl_priv_next_align > 0,    \
                     "`next_align` must be a power of 2");         \
     BL_PRIV_IASSERT(                                              \
@@ -688,19 +802,19 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END
 #define blprev(ptr, prev_size, prev_align)                                   \
     BL_PRIV_STMT_EXPR_BEGIN                                                  \
-    void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);                         \
+    register void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);                \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,                     \
                     "`ptr` cannot be NULL");                                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_prev_size = (prev_size);                           \
+    register const blsize _bl_priv_prev_size = (prev_size);                  \
     BL_PRIV_IASSERT((prev_size) > 0, _bl_priv_prev_size > 0,                 \
                     "`prev_size` must be in (0, SIZE_MAX]");                 \
     BL_PRIV_IASSERT((prev_size) <= SIZE_MAX, _bl_priv_prev_size <= SIZE_MAX, \
                     "`prev_size` must be in (0, SIZE_MAX]");                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_prev_align = (prev_align);                         \
+    register const blsize _bl_priv_prev_align = (prev_align);                \
     BL_PRIV_IASSERT((prev_align) > 0, _bl_priv_prev_align > 0,               \
                     "`prev_align` must be a power of 2");                    \
     BL_PRIV_IASSERT(                                                         \
@@ -715,16 +829,37 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END
+#define blmemb(obj, size, idx)                           \
+    BL_PRIV_STMT_EXPR_BEGIN                              \
+    register void *const _bl_priv_obj = (obj);           \
+    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL, \
+                    "`obj` can't be NULL");              \
+    BL_PRIV_STMT_EXPR_RET_SUB                            \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
+    register const blsize _bl_priv_size = (size);        \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,       \
+                    "`size` must be in (0, SIZE_MAX]");  \
+    BL_PRIV_STMT_EXPR_RET_SUB                            \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
+    register const ptrdiff_t _bl_priv_idx = (idx);       \
+    BL_PRIV_STMT_EXPR_RET                                \
+        _Generic(0 ? (obj) : _bl_priv_obj,               \
+                 void *:       bl_priv_memb,             \
+                 const void *: bl_priv_membc)            \
+        (_bl_priv_obj, _bl_priv_size, _bl_priv_idx);     \
+    BL_PRIV_STMT_EXPR_END_SUB                            \
+    BL_PRIV_STMT_EXPR_END_SUB                            \
+    BL_PRIV_STMT_EXPR_END
 #else
 #define blnext(ptr, curr_size, next_align)                        \
     BL_PRIV_STMT_EXPR_BEGIN                                       \
-    void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);              \
+    register void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);     \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,          \
                     "`ptr` cannot be NULL");                      \
     BL_PRIV_STMT_EXPR_RET_SUB                                     \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                   \
-    const blsize _bl_priv_curr_size = (curr_size);                \
-    const blsize _bl_priv_next_align = (next_align);              \
+    register const blsize _bl_priv_curr_size = (curr_size);       \
+    register const blsize _bl_priv_next_align = (next_align);     \
     BL_PRIV_IASSERT((next_align) > 0, _bl_priv_next_align > 0,    \
                     "`next_align` must be a power of 2");         \
     BL_PRIV_IASSERT(                                              \
@@ -739,19 +874,19 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END
 #define blprev(ptr, prev_size, prev_align)                                   \
     BL_PRIV_STMT_EXPR_BEGIN                                                  \
-    void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);                         \
+    register void *const _bl_priv_ptr = BL_PRIV_UNCONST(ptr);                \
     BL_PRIV_IASSERT((ptr) != NULL, _bl_priv_ptr != NULL,                     \
                     "`ptr` cannot be NULL");                                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_prev_size = (prev_size);                           \
+    register const blsize _bl_priv_prev_size = (prev_size);                  \
     BL_PRIV_IASSERT((prev_size) > 0, _bl_priv_prev_size > 0,                 \
                     "`prev_size` must be in (0, SIZE_MAX]");                 \
     BL_PRIV_IASSERT((prev_size) <= SIZE_MAX, _bl_priv_prev_size <= SIZE_MAX, \
                     "`prev_size` must be in (0, SIZE_MAX]");                 \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_prev_align = (prev_align);                         \
+    register const blsize _bl_priv_prev_align = (prev_align);                \
     BL_PRIV_IASSERT((prev_align) > 0, _bl_priv_prev_align > 0,               \
                     "`prev_align` must be a power of 2");                    \
     BL_PRIV_IASSERT(                                                         \
@@ -765,20 +900,40 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END
+#define blmemb(obj, size, idx)                             \
+    BL_PRIV_STMT_EXPR_BEGIN                                \
+    register void *const _bl_priv_obj = (obj);             \
+    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL,   \
+                    "`obj` can't be NULL");                \
+    BL_PRIV_STMT_EXPR_RET_SUB                              \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                            \
+    register const blsize _bl_priv_size = (size);          \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,         \
+                    "`size` must be in (0, SIZE_MAX]");    \
+    BL_PRIV_STMT_EXPR_RET_SUB                              \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                            \
+    register const ptrdiff_t _bl_priv_idx = (idx);         \
+    BL_PRIV_STMT_EXPR_RET (1 ? bl_priv_memb(_bl_priv_obj,  \
+                                            _bl_priv_size, \
+                                            _bl_priv_idx)  \
+                             : (obj));                     \
+    BL_PRIV_STMT_EXPR_END_SUB                              \
+    BL_PRIV_STMT_EXPR_END_SUB                              \
+    BL_PRIV_STMT_EXPR_END
 #endif
 #endif
 
 #define blsizeof(l)                                                          \
     BL_PRIV_STMT_EXPR_BEGIN                                                  \
-    const struct blayout *const _bl_priv_l = (l);                            \
+    register const struct blayout *const _bl_priv_l = (l);                   \
     BL_PRIV_IASSERT((l) != NULL, _bl_priv_l != NULL, "`l` cannot be NULL");  \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_nmemb = _bl_priv_l->nmemb;                         \
+    register const blsize _bl_priv_nmemb = _bl_priv_l->nmemb;                \
     BL_ASSERT(_bl_priv_nmemb > 0);                                           \
     BL_PRIV_STMT_EXPR_RET_SUB                                                \
     BL_PRIV_STMT_EXPR_BEGIN_SUB                                              \
-    const blsize _bl_priv_size = _bl_priv_l->size;                           \
+    register const blsize _bl_priv_size = _bl_priv_l->size;                  \
     BL_ASSERT(_bl_priv_size > 0);                                            \
     BL_ASSERT(!(_bl_priv_nmemb > BL_SIZEMAX / _bl_priv_size));               \
     BL_ASSERT(_bl_priv_l->align > 0);                                        \
@@ -789,8 +944,40 @@ BL_API blsize blsizeof(const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END
 
+#define blaligned(size, align)                                        \
+    BL_PRIV_STMT_EXPR_BEGIN                                           \
+    register const blsize _bl_priv_size = (size);                     \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,                    \
+                    "`size` must be in (0, SIZE_MAX]");               \
+    BL_PRIV_IASSERT((size) <= SIZE_MAX, _bl_priv_size <= SIZE_MAX,    \
+                    "`size` must be in (0, SIZE_MAX]");               \
+    BL_PRIV_STMT_EXPR_RET_SUB                                         \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
+    register const blsize _bl_priv_align = (align);                   \
+    BL_PRIV_IASSERT((align) > 0, _bl_priv_align > 0,                  \
+                    "`align` must be a power of 2");                  \
+    BL_PRIV_IASSERT(                                                  \
+        ((size_t)(align) & ((size_t)(align) - 1)) == 0,               \
+        ((size_t)_bl_priv_align & ((size_t)_bl_priv_align - 1)) == 0, \
+        "`align` must be a power of 2");                              \
+    BL_PRIV_STMT_EXPR_RET_SUB                                         \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
+    register const size_t _bl_priv_r = BLALIGNED(_bl_priv_size,       \
+                                                 _bl_priv_align);     \
+    BL_PRIV_IASSERT(BLALIGNED((size), (align)) >= (size_t)(size),     \
+                    _bl_priv_r >= (size_t)_bl_priv_size,              \
+                    "detected wrap-around in `blaligned()`");         \
+    BL_PRIV_IASSERT(BLALIGNED((size), (align)) <= (size_t)BL_SIZEMAX, \
+                    _bl_priv_r <= (size_t)BL_SIZEMAX,                 \
+                    "`blaligned()` result can't fit in `blsize`");    \
+    BL_PRIV_STMT_EXPR_RET (blsize)_bl_priv_r;                         \
+    BL_PRIV_STMT_EXPR_END_SUB                                         \
+    BL_PRIV_STMT_EXPR_END_SUB                                         \
+    BL_PRIV_STMT_EXPR_END
+
 #endif
 
+#undef BL_PRIV_INLINE_ALWAYS
 #if !BL_PRIV_INLINE_USER
 #undef BL_INLINE
 #endif
