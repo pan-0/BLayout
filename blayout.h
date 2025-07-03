@@ -63,7 +63,7 @@ struct blayout {
  */
 
 #define BLALIGNED(size, align) \
-	((size_t)(size) + (~((size_t)(size) - 1) & ((size_t)(align) - 1)))
+	(((size) | 0ul) + (~(((size) | 0ul) - 1) & (((align) | 0ul) - 1)))
 
 #if defined BL_CONST && !(BL_CONST >= 0 && BL_CONST <= 3)
 #error "invalid `BL_CONST` value, must be `0`, `1`, `2` or `3`"
@@ -497,7 +497,8 @@ BL_API blsize blaligned(register const blsize _size,
 	BL_ASSERT(((size_t)_align & ((size_t)_align - 1)) == 0
 	          && "`align` must be a power of 2");
 #endif
-	register const size_t _r = BLALIGNED(_size, _align);
+	register const size_t _r =
+		(size_t) BLALIGNED((size_t)_size, (size_t)_align);
 #if defined BL_DEBUG && BL_DEBUG >= 1
 	BL_ASSERT(_r >= (size_t)_size && "detected wrap-around in `blaligned()`");
 	BL_ASSERT(_r <= (size_t)BL_SIZEMAX
@@ -944,35 +945,35 @@ BL_API blsize blsizeof(register const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END
 
-#define blaligned(size, align)                                        \
-    BL_PRIV_STMT_EXPR_BEGIN                                           \
-    register const blsize _bl_priv_size = (size);                     \
-    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,                    \
-                    "`size` must be in (0, SIZE_MAX]");               \
-    BL_PRIV_IASSERT((size) <= SIZE_MAX, _bl_priv_size <= SIZE_MAX,    \
-                    "`size` must be in (0, SIZE_MAX]");               \
-    BL_PRIV_STMT_EXPR_RET_SUB                                         \
-    BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
-    register const blsize _bl_priv_align = (align);                   \
-    BL_PRIV_IASSERT((align) > 0, _bl_priv_align > 0,                  \
-                    "`align` must be a power of 2");                  \
-    BL_PRIV_IASSERT(                                                  \
-        ((size_t)(align) & ((size_t)(align) - 1)) == 0,               \
-        ((size_t)_bl_priv_align & ((size_t)_bl_priv_align - 1)) == 0, \
-        "`align` must be a power of 2");                              \
-    BL_PRIV_STMT_EXPR_RET_SUB                                         \
-    BL_PRIV_STMT_EXPR_BEGIN_SUB                                       \
-    register const size_t _bl_priv_r = BLALIGNED(_bl_priv_size,       \
-                                                 _bl_priv_align);     \
-    BL_PRIV_IASSERT(BLALIGNED((size), (align)) >= (size_t)(size),     \
-                    _bl_priv_r >= (size_t)_bl_priv_size,              \
-                    "detected wrap-around in `blaligned()`");         \
-    BL_PRIV_IASSERT(BLALIGNED((size), (align)) <= (size_t)BL_SIZEMAX, \
-                    _bl_priv_r <= (size_t)BL_SIZEMAX,                 \
-                    "`blaligned()` result can't fit in `blsize`");    \
-    BL_PRIV_STMT_EXPR_RET (blsize)_bl_priv_r;                         \
-    BL_PRIV_STMT_EXPR_END_SUB                                         \
-    BL_PRIV_STMT_EXPR_END_SUB                                         \
+#define blaligned(size, align)                                             \
+    BL_PRIV_STMT_EXPR_BEGIN                                                \
+    register const blsize _bl_priv_size = (size);                          \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,                         \
+                    "`size` must be in (0, SIZE_MAX]");                    \
+    BL_PRIV_IASSERT((size) <= SIZE_MAX, _bl_priv_size <= SIZE_MAX,         \
+                    "`size` must be in (0, SIZE_MAX]");                    \
+    BL_PRIV_STMT_EXPR_RET_SUB                                              \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                            \
+    register const blsize _bl_priv_align = (align);                        \
+    BL_PRIV_IASSERT((align) > 0, _bl_priv_align > 0,                       \
+                    "`align` must be a power of 2");                       \
+    BL_PRIV_IASSERT(                                                       \
+        ((size_t)(align) & ((size_t)(align) - 1)) == 0,                    \
+        ((size_t)_bl_priv_align & ((size_t)_bl_priv_align - 1)) == 0,      \
+        "`align` must be a power of 2");                                   \
+    BL_PRIV_STMT_EXPR_RET_SUB                                              \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                            \
+    register const size_t _bl_priv_r =                                     \
+        (size_t) BLALIGNED((size_t)_bl_priv_size, (size_t)_bl_priv_align); \
+    BL_PRIV_IASSERT((size_t) BLALIGNED((size_t)(size), (size_t)(align)) >= (size_t)(size), \
+                    _bl_priv_r >= (size_t)_bl_priv_size,                   \
+                    "detected wrap-around in `blaligned()`");              \
+    BL_PRIV_IASSERT((size_t) BLALIGNED((size_t)(size), (size_t)(align)) <= (size_t)BL_SIZEMAX, \
+                    _bl_priv_r <= (size_t)BL_SIZEMAX,                      \
+                    "`blaligned()` result can't fit in `blsize`");         \
+    BL_PRIV_STMT_EXPR_RET (blsize)_bl_priv_r;                              \
+    BL_PRIV_STMT_EXPR_END_SUB                                              \
+    BL_PRIV_STMT_EXPR_END_SUB                                              \
     BL_PRIV_STMT_EXPR_END
 
 #endif
