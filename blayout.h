@@ -166,15 +166,15 @@ struct bl_priv_max_align {
 	_Alignas(long double) long double _bl_priv_ld;
 };
 #define BL_ALIGNMENT _Alignof(struct bl_priv_max_align)
-#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L  /* C99 */
-#if defined _MSC_VER
+#elif defined _MSC_VER  /* MSVC */
 struct bl_priv_max_align {
 	long long _bl_priv_ll;
 	long double _bl_priv_ld;
 };
 /* <https://learn.microsoft.com/en-us/cpp/cpp/alignment-cpp-declarations?view=msvc-170> */
 #define BL_ALIGNMENT __alignof(struct bl_priv_max_align)
-#elif defined __GNUC__
+#elif defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L  /* C99 */
+#ifdef __GNUC__
 /* <https://gcc.gnu.org/onlinedocs/gcc-2.95.3/gcc_4.html#SEC89> */
 struct bl_priv_max_align {
 	long long _bl_priv_ll
@@ -270,6 +270,7 @@ BL_API blsize bl_priv_calc(register const blsize _align,
 			BL_ASSERT(((size_t)_l.align & ((size_t)_l.align - 1)) == 0
 					  && "layout alignment must be a power of 2");
 #endif
+			/* TODO: This actually generates a `div` under x64 MSVC... */
 			if (BL_PRIV_UNLIKELY(_l.nmemb > BL_SIZEMAX / _l.size))
 				return 0;
 
