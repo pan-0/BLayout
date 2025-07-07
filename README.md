@@ -37,7 +37,7 @@ Only freestanding headers are required:
   - `NULL`
   - `max_align_t` _(optional)_
   - `ptrdiff_t`
-  - `size_t` _(overridable)_
+  - `size_t`
 * `<stdint.h>`
   - `SIZE_MAX` _(overridable)_
   - `uintptr_t`
