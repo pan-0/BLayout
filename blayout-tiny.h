@@ -71,6 +71,5 @@ inline static void *blmemb(void *obj, size_t size, ptrdiff_t idx)
 {
 	return (char *)obj + (ptrdiff_t)size * idx;
 }
-//#define blmemb(obj, size, idx) ((char *)(obj) + (size) * (idx))
 
 #endif  /* BLAYOUT_H */
