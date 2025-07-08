@@ -692,24 +692,23 @@ BL_API blsize blsizeof(register const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                 \
     BL_PRIV_STMT_EXPR_END_SUB                                                 \
     BL_PRIV_STMT_EXPR_END
-#define blmembc(obj, size, idx)                          \
-    BL_PRIV_STMT_EXPR_BEGIN                              \
-    register const void *const _bl_priv_obj = (obj);     \
-    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL, \
-                    "`obj` can't be NULL");              \
-    BL_PRIV_STMT_EXPR_RET_SUB                            \
-    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
-    register const blsize _bl_priv_size = (size);        \
-    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,       \
-                    "`size` must be in (0, SIZE_MAX]");  \
-    BL_PRIV_STMT_EXPR_RET_SUB                            \
-    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
-    register const ptrdiff_t _bl_priv_idx = (idx);       \
-    BL_PRIV_STMT_EXPR_RET bl_priv_membc(_bl_priv_obj,    \
-                                        _bl_priv_size,   \
-                                        _bl_priv_idx);   \
-    BL_PRIV_STMT_EXPR_END_SUB                            \
-    BL_PRIV_STMT_EXPR_END_SUB                            \
+#define blmembc(obj, size, idx)                                   \
+    BL_PRIV_STMT_EXPR_BEGIN                                       \
+    register const void *const _bl_priv_obj = (obj);              \
+    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL,          \
+                    "`obj` can't be NULL");                       \
+    BL_PRIV_STMT_EXPR_RET_SUB                                     \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                   \
+    register const blsize _bl_priv_size = (size);                 \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,                \
+                    "`size` must be in (0, SIZE_MAX]");           \
+    BL_PRIV_STMT_EXPR_RET_SUB                                     \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                   \
+    register const ptrdiff_t _bl_priv_idx = (idx);                \
+    BL_PRIV_STMT_EXPR_RET                                         \
+        bl_priv_membc(_bl_priv_obj, _bl_priv_size, _bl_priv_idx); \
+    BL_PRIV_STMT_EXPR_END_SUB                                     \
+    BL_PRIV_STMT_EXPR_END_SUB                                     \
     BL_PRIV_STMT_EXPR_END
 #endif
 
@@ -759,24 +758,23 @@ BL_API blsize blsizeof(register const struct blayout *const _l)
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END_SUB                                                \
     BL_PRIV_STMT_EXPR_END
-#define blmemb(obj, size, idx)                           \
-    BL_PRIV_STMT_EXPR_BEGIN                              \
-    register void *const _bl_priv_obj = (obj);           \
-    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL, \
-                    "`obj` can't be NULL");              \
-    BL_PRIV_STMT_EXPR_RET_SUB                            \
-    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
-    register const blsize _bl_priv_size = (size);        \
-    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,       \
-                    "`size` must be in (0, SIZE_MAX]");  \
-    BL_PRIV_STMT_EXPR_RET_SUB                            \
-    BL_PRIV_STMT_EXPR_BEGIN_SUB                          \
-    register const ptrdiff_t _bl_priv_idx = (idx);       \
-    BL_PRIV_STMT_EXPR_RET bl_priv_memb(_bl_priv_obj,     \
-                                       _bl_priv_size,    \
-                                       _bl_priv_idx);    \
-    BL_PRIV_STMT_EXPR_END_SUB                            \
-    BL_PRIV_STMT_EXPR_END_SUB                            \
+#define blmemb(obj, size, idx)                                   \
+    BL_PRIV_STMT_EXPR_BEGIN                                      \
+    register void *const _bl_priv_obj = (obj);                   \
+    BL_PRIV_IASSERT((obj) != NULL, _bl_priv_obj != NULL,         \
+                    "`obj` can't be NULL");                      \
+    BL_PRIV_STMT_EXPR_RET_SUB                                    \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                  \
+    register const blsize _bl_priv_size = (size);                \
+    BL_PRIV_IASSERT((size) > 0, _bl_priv_size > 0,               \
+                    "`size` must be in (0, SIZE_MAX]");          \
+    BL_PRIV_STMT_EXPR_RET_SUB                                    \
+    BL_PRIV_STMT_EXPR_BEGIN_SUB                                  \
+    register const ptrdiff_t _bl_priv_idx = (idx);               \
+    BL_PRIV_STMT_EXPR_RET                                        \
+        bl_priv_memb(_bl_priv_obj, _bl_priv_size, _bl_priv_idx); \
+    BL_PRIV_STMT_EXPR_END_SUB                                    \
+    BL_PRIV_STMT_EXPR_END_SUB                                    \
     BL_PRIV_STMT_EXPR_END
 #elif defined BL_CONST && BL_CONST >= 2
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L  /* C11 */
