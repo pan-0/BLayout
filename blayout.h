@@ -249,8 +249,8 @@ BL_API blsize bl_priv_calc(register const blsize _align,
 	BL_ASSERT(_n > 0 && _n <= SIZE_MAX && "`n` must be in (0, SIZE_MAX]");
 	BL_ASSERT(_lays != NULL && "`lays` must point to a non-zero-sized array");
 	/*BL_ASSERT(_prev_size >= 0); */
-	BL_ASSERT(_base >= (size_t)_align &&
-	          "detected wrap-around; too large `align` and/or `offs`");
+	BL_ASSERT(_base >= (size_t)_align
+	          && "detected wrap-around; too large `align` and/or `offs`");
 #endif
 
 	if (BL_PRIV_UNLIKELY(_pos + (size_t)_prev_size < _pos))
@@ -263,12 +263,12 @@ BL_API blsize bl_priv_calc(register const blsize _align,
 			const struct blayout _l = _lays[_i];
 #if defined BL_DEBUG && BL_DEBUG >= 1
 			BL_ASSERT(_l.nmemb > 0 && _l.nmemb <= SIZE_MAX
-					  && "layout `.nmemb` must be in (0, SIZE_MAX]");
+			          && "layout `.nmemb` must be in (0, SIZE_MAX]");
 			BL_ASSERT(_l.size > 0 && _l.size <= SIZE_MAX
-					  && "layout `.size` must be in (0, SIZE_MAX]");
+			          && "layout `.size` must be in (0, SIZE_MAX]");
 			BL_ASSERT(_l.align > 0 && "layout alignment must be a power of 2");
 			BL_ASSERT(((size_t)_l.align & ((size_t)_l.align - 1)) == 0
-					  && "layout alignment must be a power of 2");
+			          && "layout alignment must be a power of 2");
 #endif
 			/* TODO: This actually generates a `div` under x64 MSVC... */
 			if (BL_PRIV_UNLIKELY(_l.nmemb > BL_SIZEMAX / _l.size))
@@ -521,19 +521,19 @@ BL_API blsize blsizeof(register const struct blayout *const _l)
 		register const blsize _nmemb = _l->nmemb;
 #if defined BL_DEBUG && BL_DEBUG >= 1
 		BL_ASSERT(_nmemb > 0 && _nmemb <= SIZE_MAX
-				  && "layout `.nmemb` must be in (0, SIZE_MAX]");
+		          && "layout `.nmemb` must be in (0, SIZE_MAX]");
 #endif
 		{
 			register const blsize _size = _l->size;
 #if defined BL_DEBUG && BL_DEBUG >= 1
 			BL_ASSERT(_size > 0 && _size <= SIZE_MAX
-					  && "layout `.size` must be in (0, SIZE_MAX]");
+			          && "layout `.size` must be in (0, SIZE_MAX]");
 			BL_ASSERT(!(_nmemb > BL_SIZEMAX / _size)
-					  && "object layout is too large");
+			          && "object layout is too large");
 			BL_ASSERT(_l->align > 0
 			          && "layout alignment must be a power of 2");
 			BL_ASSERT(((size_t)_l->align & ((size_t)_l->align - 1)) == 0
-					  && "layout alignment must be a power of 2");
+			          && "layout alignment must be a power of 2");
 #endif
 			return _nmemb * _size;
 		}
